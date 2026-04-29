@@ -1,0 +1,37 @@
+# Dependencies
+node_modules/
+frontend/node_modules/
+backend/node_modules/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+ai_service/.venv/
+ai_service/venv/
+*.egg-info/
+
+# Environment files (contain secrets like DB passwords, API keys)
+.env
+frontend/.env
+backend/.env
+ai_service/.env
+
+# Logs
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE
+.vscode/
+.idea/
+
+# Build output
+frontend/dist/
+frontend/build/
+
+# Trained data (large binary)
+backend/eng.traineddata
