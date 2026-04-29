@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, CheckCircle, UploadCloud, FileText, Loader2, AlertTriangle, Edit3 } from 'lucide-react';
+import { ArrowLeft, CheckCircle, UploadCloud, FileText, Loader2, AlertTriangle } from 'lucide-react';
 import Navbar from '../components/Navbar';
 
 export default function ApplyForm() {
@@ -84,15 +84,12 @@ export default function ApplyForm() {
       const resData = res.data;
       
       if (!resData.success) {
-         // Display specific AI rejection reason
          setErrorMsg(`AI Validation Failed for ${resData.rejectedDocument}: ${resData.reason}`);
       } else {
-         // Success! AI extracted data
          const extracted = resData.data.extractedFields || {};
          setExtractedData(extracted);
          setUploadedUrls(resData.data.documents);
          
-         // Auto-fill available fields from OCR
          setFormFields({
            ...formFields,
            fullName: extracted.fullName || formFields.fullName,
@@ -102,7 +99,7 @@ export default function ApplyForm() {
            income: extracted.income || ''
          });
          
-         setStep(2); // Proceed to Final Form
+         setStep(2);
       }
     } catch (err) {
       setErrorMsg(err.response?.data?.message || 'Error communicating with AI Service. Is backend running?');
@@ -136,42 +133,54 @@ export default function ApplyForm() {
 
   if (success) {
     return (
-      <div className="min-h-screen animated-bg flex flex-col items-center justify-center p-6 relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-[400px] h-[400px] rounded-full bg-green-400/20 blur-[80px]"></div>
-        <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="glass-3d rounded-3xl p-12 max-w-lg text-center shadow-2xl border-slate-700 relative z-10">
-          <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: 0.2, type: 'spring' }} className="inline-block p-4 rounded-full bg-green-100 text-green-600 mb-6 shadow-[0_4px_20px_rgba(0,0,0,0.5)]">
-            <CheckCircle className="w-16 h-16" />
+      <div className="min-h-screen bg-navy-900 flex flex-col items-center justify-center p-6 relative overflow-hidden">
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute top-1/4 right-1/4 w-[400px] h-[400px] bg-gov-green/10 rounded-full blur-[100px]"></div>
+        </div>
+        <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="glass-card rounded-2xl p-12 max-w-lg text-center relative z-10">
+          <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: 0.2, type: 'spring' }} className="inline-block p-5 rounded-full bg-gov-green/15 text-gov-green mb-6 border border-gov-green/20">
+            <CheckCircle className="w-14 h-14" />
           </motion.div>
-          <h2 className="text-3xl font-black text-slate-50 mb-2">Application Forwarded!</h2>
-          <p className="text-slate-400 font-medium mb-6">Your verified application has been sent to the Tahsildar Officer for final review.</p>
-          <div className="bg-slate-900/50 backdrop-blur-md rounded-xl p-4 border border-slate-700 shadow-inner mb-6">
-             <p className="text-xs text-slate-400 uppercase tracking-widest font-bold mb-1">Your Tracking ID</p>
-             <p className="text-xl font-mono font-bold text-blue-400 tracking-wider">#{trackingId}</p>
+          <h2 className="text-3xl font-black text-white mb-2">Application Forwarded!</h2>
+          <p className="text-navy-300 font-medium mb-8">Your verified application has been sent to the Tahsildar Officer for final review.</p>
+          <div className="bg-navy-800/60 rounded-xl p-4 border border-navy-600/20 mb-6">
+             <p className="text-[10px] text-navy-400 uppercase tracking-widest font-bold mb-1">Your Tracking ID</p>
+             <p className="text-xl font-mono font-bold text-saffron-500 tracking-wider">#{trackingId}</p>
           </div>
-          <p className="text-sm font-semibold text-slate-500 animate-pulse">Redirecting to Dashboard...</p>
+          <p className="text-sm font-semibold text-navy-400 animate-pulse">Redirecting to Dashboard...</p>
         </motion.div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen flex flex-col animated-bg relative overflow-hidden">
+    <div className="min-h-screen flex flex-col bg-navy-900 relative overflow-hidden">
       <Navbar />
-      <div className="absolute -top-24 -left-24 w-[500px] h-[500px] rounded-full bg-primary-400/20 blur-[100px] pointer-events-none"></div>
+      <div className="absolute -top-32 -left-32 w-[500px] h-[500px] rounded-full bg-navy-700/15 blur-[120px] pointer-events-none"></div>
+      <div className="absolute bottom-0 right-0 w-[400px] h-[400px] rounded-full bg-saffron-500/5 blur-[100px] pointer-events-none"></div>
 
       <main className="flex-grow py-24 px-4 sm:px-6 relative z-10">
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className={`max-w-${step === 1 ? '3xl' : '4xl'} mx-auto glass-3d rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.7)] border-slate-700 p-8 md:p-10 transition-all duration-500`}
+          className={`max-w-${step === 1 ? '3xl' : '4xl'} mx-auto glass-card rounded-2xl p-8 md:p-10 transition-all duration-500 border-navy-600/20`}
         >
-          <button onClick={() => step === 2 ? setStep(1) : navigate('/dashboard')} className="group text-slate-400 hover:text-blue-500 text-sm font-bold mb-8 flex items-center gap-2 transition-colors bg-slate-900/50 px-4 py-2 rounded-full shadow-[0_4px_20px_rgba(0,0,0,0.5)] border border-transparent hover:border-primary-200 w-fit">
+          {/* Progress Steps */}
+          <div className="flex items-center justify-center mb-8">
+            <div className="flex items-center gap-3">
+              <div className={`w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold border-2 transition-all ${step >= 1 ? 'bg-saffron-500 border-saffron-500 text-navy-900' : 'border-navy-600 text-navy-500'}`}>1</div>
+              <div className={`w-20 h-0.5 rounded transition-all ${step >= 2 ? 'bg-saffron-500' : 'bg-navy-700'}`}></div>
+              <div className={`w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold border-2 transition-all ${step >= 2 ? 'bg-saffron-500 border-saffron-500 text-navy-900' : 'border-navy-600 text-navy-500'}`}>2</div>
+            </div>
+          </div>
+
+          <button onClick={() => step === 2 ? setStep(1) : navigate('/dashboard')} className="group text-navy-400 hover:text-saffron-500 text-sm font-semibold mb-8 flex items-center gap-2 transition-colors bg-navy-800/50 px-4 py-2 rounded-full border border-navy-600/20 w-fit">
             <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" /> {step === 2 ? 'Back to Uploads' : 'Back to Dashboard'}
           </button>
           
           <AnimatePresence mode="wait">
             {errorMsg && (
-              <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="mb-6 bg-red-50 border border-red-200 text-red-700 p-4 rounded-xl flex items-start gap-3 shadow-[0_4px_20px_rgba(0,0,0,0.5)]">
+              <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="mb-6 bg-red-500/10 border border-red-500/20 text-red-400 p-4 rounded-xl flex items-start gap-3">
                  <AlertTriangle className="w-5 h-5 flex-shrink-0 mt-0.5" />
                  <div><strong className="block font-bold">Action Required</strong><span className="text-sm">{errorMsg}</span></div>
               </motion.div>
@@ -181,41 +190,59 @@ export default function ApplyForm() {
           {step === 1 && (
             <motion.div key="step1" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }}>
               <div className="mb-10 text-center">
-                <span className="inline-block bg-primary-100 text-blue-400 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-widest shadow-[0_4px_20px_rgba(0,0,0,0.5)] mb-3">Step 1: AI Verification</span>
-                <h2 className="text-3xl md:text-4xl font-extrabold text-slate-50 mb-3 drop-shadow-[0_4px_20px_rgba(0,0,0,0.5)]">Upload Documents</h2>
-                <p className="text-slate-400 font-medium bg-slate-900/40 p-3 rounded-lg border border-slate-700 max-w-xl mx-auto">
-                   Securely upload your clear documents below. Our <span className="font-bold text-blue-500">AI algorithm will analyze validity & extract data</span> instantly.
+                <span className="inline-block bg-navy-800 text-saffron-500 px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest border border-navy-600/30 mb-3">Step 1: AI Verification</span>
+                <h2 className="text-3xl md:text-4xl font-extrabold text-white mb-3">Upload Documents</h2>
+                <p className="text-navy-300 font-medium max-w-xl mx-auto">
+                   Upload clear images of your documents. Our <span className="font-bold text-saffron-500">AI will analyze validity & extract data</span> instantly.
                 </p>
               </div>
 
-              <form onSubmit={handleAnalyze} className="space-y-6">
-                <div className="space-y-4 rounded-xl">
-                  {requiredDocs.map((docType, index) => (
-                    <div key={docType} className={`border ${files[docType] ? 'border-primary-300 bg-primary-50/50' : 'border-slate-700/60 bg-slate-900/60'} rounded-xl p-5 flex flex-col sm:flex-row justify-between items-start sm:items-center backdrop-blur-sm shadow-[0_4px_20px_rgba(0,0,0,0.5)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.6)] transition-all group`}>
+              <form onSubmit={handleAnalyze} className="space-y-5">
+                <div className="space-y-4">
+                  {requiredDocs.map((docType) => (
+                    <div key={docType} className={`border ${files[docType] ? 'border-gov-green/30 bg-gov-green/5' : 'border-navy-600/30 bg-navy-800/40'} rounded-xl p-5 flex flex-col sm:flex-row justify-between items-start sm:items-center backdrop-blur-sm transition-all group hover:border-navy-500/40`}>
                       <div className="mb-4 sm:mb-0 flex items-center gap-4">
-                        <div className={`p-2 rounded-lg ${files[docType] ? 'bg-primary-100 text-blue-500' : 'bg-slate-800/70 text-slate-500 group-hover:bg-primary-50 group-hover:text-primary-500 transition-colors'}`}>
-                           <FileText className="w-6 h-6" />
+                        <div className={`p-2.5 rounded-xl ${files[docType] ? 'bg-gov-green/15 text-gov-green' : 'bg-navy-700/50 text-navy-400 group-hover:text-saffron-500 transition-colors'}`}>
+                           <FileText className="w-5 h-5" />
                         </div>
                         <div>
-                          <h3 className="font-bold text-slate-50 text-sm md:text-base">{docType} <span className="text-red-500">*</span></h3>
-                          <p className="text-xs text-slate-400 font-medium">Valid JPG, JPEG, PNG (No PDF)</p>
+                          <h3 className="font-bold text-white text-sm">{docType} <span className="text-red-400">*</span></h3>
+                          <p className="text-xs text-navy-400 font-medium">JPG, JPEG, PNG (No PDF)</p>
                         </div>
                       </div>
 
                       <div className="flex-shrink-0 w-full sm:w-auto">
-                        <label className={`cursor-pointer w-full sm:w-auto py-2.5 px-6 rounded-lg font-bold text-sm transition-all flex items-center justify-center gap-2 border ${files[docType] ? 'bg-primary-600 text-white shadow-[0_8px_30px_rgba(0,0,0,0.6)] hover:bg-primary-700' : 'bg-slate-900 text-blue-400 hover:bg-primary-50 hover:shadow-[0_4px_20px_rgba(0,0,0,0.5)] border-slate-700'}`}>
+                        <label className={`cursor-pointer w-full sm:w-auto py-2.5 px-5 rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2 border ${files[docType] ? 'bg-gov-green text-white border-gov-green hover:bg-gov-green/90' : 'bg-navy-800 text-navy-300 border-navy-600/30 hover:border-saffron-500/30 hover:text-saffron-400'}`}>
                           {files[docType] ? <CheckCircle className="w-4 h-4" /> : <UploadCloud className="w-4 h-4" />}
-                          {files[docType] ? 'Change File' : 'Upload Image'}
+                          {files[docType] ? 'Change' : 'Upload'}
                           <input type="file" className="sr-only" onChange={(e) => handleFileChange(docType, e.target.files[0])} accept=".jpg,.jpeg,.png" />
                         </label>
-                        {files[docType] && <span className="block mt-2 text-[11px] text-blue-400 font-bold bg-primary-100/50 px-2 py-1 rounded w-fit truncate max-w-[200px]">✓ {files[docType].name}</span>}
+                        {files[docType] && <span className="block mt-2 text-[11px] text-gov-green font-semibold truncate max-w-[200px]">✓ {files[docType].name}</span>}
                       </div>
                     </div>
                   ))}
                 </div>
 
-                <motion.button whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.98 }} disabled={submitting} type="submit" className={`mt-10 w-full flex justify-center py-4 px-4 border border-transparent text-base font-extrabold rounded-xl text-white shadow-[0_20px_50px_rgba(0,0,0,0.7)] transition-all ${submitting ? 'bg-primary-400 cursor-not-allowed' : 'bg-gradient-to-r from-primary-600 to-primary-700 hover:shadow-primary-600/40 hover:-translate-y-0.5'}`}>
-                  {submitting ? (<span className="flex items-center gap-2"><Loader2 className="w-5 h-5 animate-spin" /> AI Processing Documents...</span>) : 'Run AI Document Analysis'}
+                {/* AI Robot during submission */}
+                {submitting && (
+                  <motion.div 
+                    initial={{ opacity: 0, scale: 0.9 }} 
+                    animate={{ opacity: 1, scale: 1 }} 
+                    className="flex flex-col items-center py-6"
+                  >
+                    <motion.img
+                      src="/ai_robot.gif"
+                      alt="AI Processing"
+                      className="w-28 h-28 object-contain mb-3"
+                      animate={{ y: [0, -5, 0] }}
+                      transition={{ duration: 1.5, repeat: Infinity }}
+                    />
+                    <p className="text-saffron-500 font-bold text-sm animate-pulse">AI is analyzing your documents...</p>
+                  </motion.div>
+                )}
+
+                <motion.button whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.98 }} disabled={submitting} type="submit" className={`mt-6 w-full flex justify-center py-4 px-4 text-base font-bold rounded-xl text-white shadow-lg transition-all ${submitting ? 'bg-navy-700 cursor-not-allowed' : 'bg-gradient-to-r from-saffron-500 to-saffron-600 hover:shadow-saffron-500/25 hover:-translate-y-0.5'}`}>
+                  {submitting ? (<span className="flex items-center gap-2"><Loader2 className="w-5 h-5 animate-spin" /> Processing...</span>) : 'Run AI Document Analysis'}
                 </motion.button>
               </form>
             </motion.div>
@@ -223,62 +250,67 @@ export default function ApplyForm() {
 
           {step === 2 && (
              <motion.div key="step2" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
-                <div className="mb-8 border-b border-slate-700/50 pb-6 flex justify-between items-center">
+                <div className="mb-8 border-b border-navy-600/20 pb-6 flex justify-between items-center">
                    <div>
-                     <span className="inline-block bg-green-100 text-green-700 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest shadow-[0_4px_20px_rgba(0,0,0,0.5)] mb-2"><CheckCircle className="inline w-3 h-3 mr-1" /> OCR Success</span>
-                     <h2 className="text-2xl md:text-3xl font-extrabold text-slate-50">Finalize Application</h2>
+                     <span className="inline-flex items-center gap-1 bg-gov-green/10 text-gov-green px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest border border-gov-green/20 mb-2"><CheckCircle className="w-3 h-3" /> AI Verified</span>
+                     <h2 className="text-2xl md:text-3xl font-extrabold text-white">Finalize Application</h2>
                    </div>
-                   <div className="bg-slate-900/60 p-3 rounded-lg border border-slate-700 shadow-[0_4px_20px_rgba(0,0,0,0.5)] hidden md:block">
-                     <p className="text-xs text-slate-400 font-medium">Autofilled fields based on</p>
-                     <p className="text-sm font-bold text-blue-400">{uploadedUrls.length} verified documents</p>
+                   <div className="bg-navy-800/60 p-3 rounded-xl border border-navy-600/20 hidden md:block">
+                     <p className="text-xs text-navy-400 font-medium">Autofilled from</p>
+                     <p className="text-sm font-bold text-saffron-500">{uploadedUrls.length} verified documents</p>
                    </div>
                 </div>
 
                 <form onSubmit={handleFinalSubmit} className="space-y-6">
-                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-slate-900/40 p-6 rounded-xl border border-slate-700">
+                   <div className="grid grid-cols-1 md:grid-cols-2 gap-5 bg-navy-800/30 p-6 rounded-xl border border-navy-600/20">
                       
-                      <div className="col-span-1 md:col-span-2"><h4 className="text-sm font-extrabold text-slate-50 uppercase tracking-widest border-l-4 border-primary-500 pl-2 mb-2">Extracted Information</h4><p className="text-xs text-slate-400 mb-4 font-medium">Please verify these details extracted by AI. Correct any mistakes manually.</p></div>
+                      <div className="col-span-1 md:col-span-2">
+                        <h4 className="text-sm font-bold text-white uppercase tracking-wider border-l-3 border-saffron-500 pl-3 mb-1">Extracted Information</h4>
+                        <p className="text-xs text-navy-400 mb-4 font-medium">Please verify the AI-extracted details. Correct any mistakes manually.</p>
+                      </div>
 
                       <div>
-                         <label className="block text-xs font-bold text-slate-300 uppercase mb-1">Full Legal Name <span className="text-red-500">*</span></label>
-                         <input required type="text" name="fullName" value={formFields.fullName} onChange={handleFieldChange} className="w-full px-4 py-2.5 bg-slate-900 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition font-medium" />
+                         <label className="block text-xs font-bold text-navy-300 uppercase mb-1.5">Full Legal Name <span className="text-red-400">*</span></label>
+                         <input required type="text" name="fullName" value={formFields.fullName} onChange={handleFieldChange} className="gov-input" />
                       </div>
                       
                       <div>
-                         <label className="block text-xs font-bold text-slate-300 uppercase mb-1">ID Number (Aadhar/PAN)</label>
+                         <label className="block text-xs font-bold text-navy-300 uppercase mb-1.5">ID Number (Aadhaar/PAN)</label>
                          <div className="relative">
-                            <input type="text" name="idNumber" value={formFields.idNumber} onChange={handleFieldChange} className="w-full px-4 py-2.5 bg-slate-900/50 border border-primary-200 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none transition font-medium text-primary-900" />
-                            {extractedData.idNumber && <span className="absolute right-3 top-2.5 text-[10px] bg-green-100 text-green-700 px-2 py-0.5 rounded font-bold">Auto</span>}
+                            <input type="text" name="idNumber" value={formFields.idNumber} onChange={handleFieldChange} className="gov-input" />
+                            {extractedData.idNumber && <span className="absolute right-3 top-3 text-[10px] bg-gov-green/15 text-gov-green px-2 py-0.5 rounded font-bold border border-gov-green/20">Auto</span>}
                          </div>
                       </div>
 
                       <div>
-                         <label className="block text-xs font-bold text-slate-300 uppercase mb-1">Date of Birth</label>
-                         <input type="date" name="dob" value={formFields.dob} onChange={handleFieldChange} className="w-full px-4 py-2.5 bg-slate-900 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none transition font-medium text-slate-300" />
+                         <label className="block text-xs font-bold text-navy-300 uppercase mb-1.5">Date of Birth</label>
+                         <input type="date" name="dob" value={formFields.dob} onChange={handleFieldChange} className="gov-input" />
                       </div>
 
                       {certType === 'Income' || certType === 'EWS' ? (
                         <div>
-                           <label className="block text-xs font-bold text-slate-300 uppercase mb-1">Annual Income (₹) <span className="text-red-500">*</span></label>
-                           <input required type="number" name="income" value={formFields.income} onChange={handleFieldChange} className="w-full px-4 py-2.5 bg-slate-900 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none transition font-medium" />
+                           <label className="block text-xs font-bold text-navy-300 uppercase mb-1.5">Annual Income (₹) <span className="text-red-400">*</span></label>
+                           <input required type="number" name="income" value={formFields.income} onChange={handleFieldChange} className="gov-input" />
                         </div>
                       ) : null}
 
                       <div className="col-span-1 md:col-span-2">
-                         <label className="block text-xs font-bold text-slate-300 uppercase mb-1">Address</label>
-                         <textarea name="address" value={formFields.address} onChange={handleFieldChange} rows="2" className="w-full px-4 py-2.5 bg-slate-900 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none transition font-medium" />
+                         <label className="block text-xs font-bold text-navy-300 uppercase mb-1.5">Address</label>
+                         <textarea name="address" value={formFields.address} onChange={handleFieldChange} rows="2" className="gov-input resize-none" />
                       </div>
 
-                      <div className="col-span-1 md:col-span-2 mt-4 pt-4 border-t border-slate-700/50"><h4 className="text-sm font-extrabold text-slate-50 uppercase tracking-widest border-l-4 border-saffron-500 pl-2 mb-2">Additional Information</h4></div>
-
-                      <div>
-                         <label className="block text-xs font-bold text-slate-300 uppercase mb-1">Mobile Number <span className="text-red-500">*</span></label>
-                         <input required type="tel" name="phone" value={formFields.phone} onChange={handleFieldChange} className="w-full px-4 py-2.5 bg-slate-900 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none transition font-medium" />
+                      <div className="col-span-1 md:col-span-2 mt-3 pt-4 border-t border-navy-600/20">
+                        <h4 className="text-sm font-bold text-white uppercase tracking-wider border-l-3 border-gov-green pl-3 mb-1">Additional Information</h4>
                       </div>
 
                       <div>
-                         <label className="block text-xs font-bold text-slate-300 uppercase mb-1">Purpose of Certificate <span className="text-red-500">*</span></label>
-                         <select required name="purpose" value={formFields.purpose} onChange={handleFieldChange} className="w-full px-4 py-2.5 bg-slate-900 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none transition font-medium">
+                         <label className="block text-xs font-bold text-navy-300 uppercase mb-1.5">Mobile Number <span className="text-red-400">*</span></label>
+                         <input required type="tel" name="phone" value={formFields.phone} onChange={handleFieldChange} className="gov-input" />
+                      </div>
+
+                      <div>
+                         <label className="block text-xs font-bold text-navy-300 uppercase mb-1.5">Purpose <span className="text-red-400">*</span></label>
+                         <select required name="purpose" value={formFields.purpose} onChange={handleFieldChange} className="gov-input">
                             <option value="">Select Purpose</option>
                             <option value="Education">Education/Admission</option>
                             <option value="Employment">Employment</option>
@@ -288,8 +320,8 @@ export default function ApplyForm() {
                       </div>
 
                       <div>
-                        <label className="block text-xs font-bold text-slate-300 uppercase mb-1">Select Area/Jurisdiction <span className="text-red-500">*</span></label>
-                        <select required name="area" value={formFields.area} onChange={handleFieldChange} className="w-full px-4 py-2.5 bg-slate-900 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none transition font-medium text-slate-50">
+                        <label className="block text-xs font-bold text-navy-300 uppercase mb-1.5">Area/Jurisdiction <span className="text-red-400">*</span></label>
+                        <select required name="area" value={formFields.area} onChange={handleFieldChange} className="gov-input">
                            <option value="">Select Area</option>
                            <option value="North Zone">North Zone</option>
                            <option value="South Zone">South Zone</option>
@@ -300,7 +332,7 @@ export default function ApplyForm() {
                      </div>
                    </div>
 
-                   <motion.button whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.98 }} disabled={submitting} type="submit" className={`mt-8 w-full flex justify-center py-4 px-4 border border-transparent text-base font-extrabold rounded-xl text-white shadow-[0_20px_50px_rgba(0,0,0,0.7)] transition-all ${submitting ? 'bg-primary-400 cursor-not-allowed' : 'bg-gradient-to-r from-saffron-500 to-orange-600 hover:shadow-saffron-500/40 hover:-translate-y-0.5'}`}>
+                   <motion.button whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.98 }} disabled={submitting} type="submit" className={`mt-4 w-full flex justify-center py-4 px-4 text-base font-bold rounded-xl text-white shadow-lg transition-all ${submitting ? 'bg-navy-700 cursor-not-allowed' : 'bg-gradient-to-r from-gov-green to-emerald-600 hover:shadow-gov-green/25 hover:-translate-y-0.5'}`}>
                       {submitting ? (<span className="flex items-center gap-2"><Loader2 className="w-5 h-5 animate-spin" /> Forwarding to Admin...</span>) : 'Final Submit to Officer'}
                    </motion.button>
                 </form>

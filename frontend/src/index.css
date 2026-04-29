@@ -1,17 +1,31 @@
 @import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:wght@400;700;900&display=swap');
 
 @theme {
+  --color-navy-900: #021526;
+  --color-navy-800: #042C53;
+  --color-navy-700: #0C447C;
+  --color-navy-600: #185FA5;
+  --color-navy-500: #378ADD;
+  --color-navy-400: #85B7EB;
+  --color-navy-300: #B5D4F4;
+  --color-navy-200: #E6F1FB;
+
+  --color-saffron-500: #FF9933;
+  --color-saffron-400: #FFB366;
+  --color-saffron-600: #E07800;
+
+  --color-gov-green: #1D9E75;
+  --color-gov-green-light: #E1F5EE;
+  --color-gov-green-dark: #085041;
+
   --color-primary-50: #0f172a;
   --color-primary-100: #1e293b;
   --color-primary-400: #3b82f6;
   --color-primary-500: #2563eb;
   --color-primary-600: #1d4ed8;
   --color-primary-700: #1e3a8a;
-  
-  --color-saffron-400: #fc9842;
-  --color-saffron-500: #fe5f75;
-  --color-saffron-600: #ea580c;
-  
+
   --color-green-400: #4ade80;
   --color-green-500: #22c55e;
 
@@ -21,9 +35,9 @@
 
 body {
   font-family: var(--font-sans);
-  @apply bg-slate-950 text-slate-100;
+  @apply bg-navy-900 text-slate-100;
   overflow-x: hidden;
-  background-color: #020617;
+  background-color: #021526;
 }
 
 h1, h2, h3, h4, h5, h6 {
@@ -34,54 +48,139 @@ h1, h2, h3, h4, h5, h6 {
   font-family: var(--font-serif);
 }
 
-/* Premium Dark Glassmorphism Utilities */
+/* ─── Glassmorphism Utilities ─── */
 .glass {
-  background: rgba(15, 23, 42, 0.4);
+  background: rgba(4, 44, 83, 0.5);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
-.glass-dark {
-  background: rgba(2, 6, 23, 0.6);
-  backdrop-filter: blur(25px);
-  -webkit-backdrop-filter: blur(25px);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+.glass-card {
+  background: linear-gradient(135deg, rgba(12, 68, 124, 0.35), rgba(4, 44, 83, 0.55));
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(133, 183, 235, 0.12);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
 }
 
-.glass-card {
-  background: linear-gradient(135deg, rgba(30, 41, 59, 0.5), rgba(15, 23, 42, 0.6));
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: 0 10px 40px 0 rgba(0, 0, 0, 0.5);
+.glass-card-light {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
 }
 
 .glass-3d {
-  background: linear-gradient(145deg, rgba(30, 41, 59, 0.6), rgba(15, 23, 42, 0.8));
+  background: linear-gradient(145deg, rgba(12, 68, 124, 0.4), rgba(4, 44, 83, 0.6));
   backdrop-filter: blur(24px);
-  border-top: 1px solid rgba(255, 255, 255, 0.12);
-  border-left: 1px solid rgba(255, 255, 255, 0.08);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.02);
-  border-right: 1px solid rgba(255, 255, 255, 0.02);
-  box-shadow: 15px 15px 40px rgba(0, 0, 0, 0.8),
-              -5px -5px 20px rgba(255, 255, 255, 0.03),
-              inset 0 0 20px rgba(255, 255, 255, 0.02);
-  transform-style: preserve-3d;
+  border-top: 1px solid rgba(133, 183, 235, 0.15);
+  border-left: 1px solid rgba(133, 183, 235, 0.10);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+  border-right: 1px solid rgba(0, 0, 0, 0.1);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5),
+              inset 0 0 30px rgba(133, 183, 235, 0.03);
 }
 
-.glow-text {
-  text-shadow: 0 0 20px rgba(59, 130, 246, 0.6);
+/* ─── Government Card Styles ─── */
+.gov-card {
+  background: linear-gradient(135deg, rgba(4, 44, 83, 0.7), rgba(2, 21, 38, 0.9));
+  border: 1px solid rgba(55, 138, 221, 0.15);
+  border-radius: 16px;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
+  transition: all 0.3s ease;
+}
+.gov-card:hover {
+  border-color: rgba(255, 153, 51, 0.3);
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.4), 0 0 20px rgba(255, 153, 51, 0.08);
+  transform: translateY(-2px);
 }
 
-.glow-text-saffron {
-  text-shadow: 0 0 20px rgba(252, 152, 66, 0.6);
+/* ─── Government Input ─── */
+.gov-input {
+  background: rgba(4, 44, 83, 0.5);
+  border: 1px solid rgba(55, 138, 221, 0.2);
+  border-radius: 12px;
+  padding: 12px 16px;
+  color: #E6F1FB;
+  font-family: 'Outfit', sans-serif;
+  font-size: 14px;
+  outline: none;
+  transition: all 0.2s ease;
+  width: 100%;
+}
+.gov-input:focus {
+  border-color: rgba(255, 153, 51, 0.5);
+  box-shadow: 0 0 0 3px rgba(255, 153, 51, 0.1);
+}
+.gov-input::placeholder {
+  color: rgba(133, 183, 235, 0.4);
+}
+select.gov-input {
+  appearance: none;
+}
+select.gov-input option {
+  background: #042C53;
+  color: #E6F1FB;
 }
 
+/* ─── Gradient Utilities ─── */
+.gov-gradient {
+  background: linear-gradient(135deg, #FF9933 0%, #E07800 100%);
+}
+.gov-gradient-navy {
+  background: linear-gradient(135deg, #042C53 0%, #0C447C 100%);
+}
+.tricolor-bar {
+  height: 3px;
+  background: linear-gradient(90deg, #FF9933 0%, #FF9933 33%, #FFFFFF 33%, #FFFFFF 66%, #1D9E75 66%, #1D9E75 100%);
+}
+.tricolor-bar-top {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #FF9933 0%, #FF9933 33%, #FFFFFF 33%, #FFFFFF 66%, #1D9E75 66%, #1D9E75 100%);
+  z-index: 50;
+}
+
+/* ─── Status Badges ─── */
+.badge-approved {
+  background: rgba(29, 158, 117, 0.12);
+  color: #1D9E75;
+  border: 1px solid rgba(29, 158, 117, 0.25);
+}
+.badge-rejected {
+  background: rgba(239, 68, 68, 0.12);
+  color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.25);
+}
+.badge-pending {
+  background: rgba(255, 153, 51, 0.12);
+  color: #FF9933;
+  border: 1px solid rgba(255, 153, 51, 0.25);
+}
+.badge-progress {
+  background: rgba(55, 138, 221, 0.12);
+  color: #378ADD;
+  border: 1px solid rgba(55, 138, 221, 0.25);
+}
+
+/* ─── Video Background Overlay ─── */
+.video-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(2, 21, 38, 0.88) 0%, rgba(4, 44, 83, 0.75) 100%);
+  z-index: 1;
+}
+
+/* ─── Animated Background ─── */
 .animated-bg {
-  background: linear-gradient(-45deg, #020617, #0f172a, #111827, #0b0f19);
+  background: linear-gradient(-45deg, #021526, #042C53, #0C447C, #021526);
   background-size: 400% 400%;
-  animation: gradient 15s ease infinite;
+  animation: gradient 20s ease infinite;
 }
 
 @keyframes gradient {
@@ -90,18 +189,53 @@ h1, h2, h3, h4, h5, h6 {
   100% { background-position: 0% 50%; }
 }
 
-/* Custom scrollbar for modern feel */
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+}
+.float-animation {
+  animation: float 3s ease-in-out infinite;
+}
+
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 5px rgba(255, 153, 51, 0.3); }
+  50% { box-shadow: 0 0 20px rgba(255, 153, 51, 0.6); }
+}
+.pulse-glow {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+/* ─── Scrollbar ─── */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: #020617;
+  background: #021526;
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(59, 130, 246, 0.3);
-  border-radius: 4px;
+  background: rgba(55, 138, 221, 0.3);
+  border-radius: 3px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(59, 130, 246, 0.6);
+  background: rgba(255, 153, 51, 0.5);
+}
+
+/* ─── Print Styles ─── */
+@media print {
+  body {
+    background: white !important;
+    color: black !important;
+  }
+  .print\\:hidden {
+    display: none !important;
+  }
+}
+
+/* ─── Glow Texts ─── */
+.glow-text {
+  text-shadow: 0 0 20px rgba(55, 138, 221, 0.5);
+}
+.glow-text-saffron {
+  text-shadow: 0 0 20px rgba(255, 153, 51, 0.5);
 }
