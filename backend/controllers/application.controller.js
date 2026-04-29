@@ -231,8 +231,10 @@ exports.getMyApplications = async (req, res, next) => {
 exports.getAllApplications = async (req, res, next) => {
   try {
     let query = {};
-    if (req.user.area) {
-       query.area = req.user.area; // Filter by Tahsildar's area
+    if (req.user.role === 'admin' && req.user.allocatedAreas && req.user.allocatedAreas.length > 0) {
+       query.area = { $in: req.user.allocatedAreas }; // Filter by Tahsildar's multiple allocated areas
+    } else if (req.user.area) {
+       query.area = req.user.area; // Fallback to single area if defined
     }
     
     const applications = await Application.find(query).populate('user', 'fullName email').sort('-createdAt');

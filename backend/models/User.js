@@ -7,7 +7,8 @@ const UserSchema = new mongoose.Schema({
   password: { type: String }, // Optional for Google Auth users
   googleId: { type: String, unique: true, sparse: true },
   role: { type: String, enum: ['citizen', 'admin'], default: 'citizen' },
-  area: { type: String }, // Used to map Tahsildars to their jurisdiction and users to their district
+  area: { type: String }, // Used for citizens to mark their default area
+  allocatedAreas: { type: [String], default: [] }, // Used for admins (Tahsildars) to manage multiple jurisdictions
   createdAt: { type: Date, default: Date.now }
 });
 

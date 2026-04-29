@@ -323,6 +323,8 @@ export default function ApplyForm() {
                         <label className="block text-xs font-bold text-navy-300 uppercase mb-1.5">Area/Jurisdiction <span className="text-red-400">*</span></label>
                         <select required name="area" value={formFields.area} onChange={handleFieldChange} className="gov-input">
                            <option value="">Select Area</option>
+                           <option value="Ambole Pali">Ambole Pali</option>
+                           <option value="Panvel">Panvel</option>
                            <option value="North Zone">North Zone</option>
                            <option value="South Zone">South Zone</option>
                            <option value="East Zone">East Zone</option>

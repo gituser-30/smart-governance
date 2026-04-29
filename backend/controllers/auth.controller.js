@@ -30,8 +30,8 @@ exports.register = async (req, res, next) => {
     const { fullName, email, password } = req.body;
 
     const existingUser = await User.findOne({ email });
-    if(existingUser) {
-        return res.status(400).json({ success: false, message: 'Email already exists' });
+    if (existingUser) {
+      return res.status(400).json({ success: false, message: 'Email already exists' });
     }
 
     const user = await User.create({
@@ -40,12 +40,12 @@ exports.register = async (req, res, next) => {
       password,
       role: 'citizen'
     });
-    
+
     // Send Welcome Email Async
     sendEmail({
-        email: user.email,
-        subject: 'Welcome to the Smart Governance Portal',
-        html: `<h2>Welcome, ${user.fullName}</h2><p>You have successfully registered on the Smart Governance Portal. You can now apply for government certificates seamlessly.</p>`
+      email: user.email,
+      subject: 'Welcome to the Smart Governance Portal',
+      html: `<h2>Welcome, ${user.fullName}</h2><p>You have successfully registered on the Smart Governance Portal. You can now apply for government certificates seamlessly.</p>`
     }).catch(err => console.log('Email sending failed', err));
 
     sendTokenResponse(user, 201, res);
@@ -77,9 +77,9 @@ exports.login = async (req, res, next) => {
 
     // Security Alert Email
     sendEmail({
-        email: user.email,
-        subject: 'Security Alert: New Sign-in',
-        html: `<h3>Hello ${user.fullName},</h3><p>We detected a new sign-in to your Smart Governance Account just now.</p>`
+      email: user.email,
+      subject: 'Security Alert: New Sign-in',
+      html: `<h3>Hello ${user.fullName},</h3><p>We detected a new sign-in to your Smart Governance Account just now.</p>`
     }).catch(console.error);
 
     sendTokenResponse(user, 200, res);
@@ -91,56 +91,56 @@ exports.login = async (req, res, next) => {
 // @desc    Login with Google
 // @route   POST /api/auth/google
 exports.googleLogin = async (req, res, next) => {
-    try {
-        const { token } = req.body;
-        
-        // Verify Google token
-        const ticket = await client.verifyIdToken({
-            idToken: token,
-            audience: process.env.GOOGLE_CLIENT_ID
-        });
-        const payload = ticket.getPayload();
-        
-        const { email, name, sub: googleId } = payload;
-        
-        let user = await User.findOne({ email });
-        
-        if (user) {
-            // Unify account if email exists but no googleId
-            if (!user.googleId) {
-                user.googleId = googleId;
-                await user.save();
-            }
-            
-            // Send Alert Email
-            sendEmail({
-                email: user.email,
-                subject: 'Security Alert: Google Sign-in',
-                html: `<h3>Hello ${user.fullName},</h3><p>Your Smart Governance Account was accessed via Google Sign-In.</p>`
-            }).catch(console.error);
+  try {
+    const { token } = req.body;
 
-            return sendTokenResponse(user, 200, res);
-        } else {
-            // Create user
-            user = await User.create({
-                fullName: name,
-                email,
-                googleId,
-                role: 'citizen' // password omitted voluntarily
-            });
-            
-            sendEmail({
-                email: user.email,
-                subject: 'Welcome to the Smart Governance Portal',
-                html: `<h2>Welcome, ${user.fullName}</h2><p>You have successfully registered on the Smart Governance Portal using Google Auth.</p>`
-            }).catch(console.error);
+    // Verify Google token
+    const ticket = await client.verifyIdToken({
+      idToken: token,
+      audience: process.env.GOOGLE_CLIENT_ID
+    });
+    const payload = ticket.getPayload();
 
-            return sendTokenResponse(user, 201, res);
-        }
-    } catch(err) {
-        console.error('Google Auth Error: ', err);
-        res.status(401).json({ success: false, message: 'Invalid Google Token' });
+    const { email, name, sub: googleId } = payload;
+
+    let user = await User.findOne({ email });
+
+    if (user) {
+      // Unify account if email exists but no googleId
+      if (!user.googleId) {
+        user.googleId = googleId;
+        await user.save();
+      }
+
+      // Send Alert Email
+      sendEmail({
+        email: user.email,
+        subject: 'Security Alert: Google Sign-in',
+        html: `<h3>Hello ${user.fullName},</h3><p>Your Smart Governance Account was accessed via Google Sign-In.</p>`
+      }).catch(console.error);
+
+      return sendTokenResponse(user, 200, res);
+    } else {
+      // Create user
+      user = await User.create({
+        fullName: name,
+        email,
+        googleId,
+        role: 'citizen' // password omitted voluntarily
+      });
+
+      sendEmail({
+        email: user.email,
+        subject: 'Welcome to the Smart Governance Portal',
+        html: `<h2>Welcome, ${user.fullName}</h2><p>You have successfully registered on the Smart Governance Portal using Google Auth.</p>`
+      }).catch(console.error);
+
+      return sendTokenResponse(user, 201, res);
     }
+  } catch (err) {
+    console.error('Google Auth Error: ', err);
+    res.status(401).json({ success: false, message: 'Invalid Google Token' });
+  }
 }
 
 // @desc    Get current user
@@ -160,23 +160,53 @@ exports.adminLogin = async (req, res, next) => {
   try {
     const { username, password } = req.body;
 
-    if (username !== 'admin' || password !== 'smartadmin2026') {
+    const MOCK_ADMINS = {
+      'admin_ambole': {
+        password: 'password123',
+        fullName: 'Tahsildar Ambole',
+        email: 'ambole@smartgovernance.gov.in',
+        allocatedAreas: ['Ambole Pali']
+      },
+      'admin_panvel': {
+        password: 'password987',
+        fullName: 'Tahsildar Panvel',
+        email: 'panvel@smartgovernance.gov.in',
+        allocatedAreas: ['Panvel']
+      },
+      'admin': {
+        password: 'smartadmin2026',
+        fullName: 'System Administrator (Tahsildar)',
+        email: 'admin@smartgovernance.gov.in',
+        allocatedAreas: [] // Sees all
+      }
+    };
+
+    const adminConfig = MOCK_ADMINS[username];
+
+    if (!adminConfig || adminConfig.password !== password) {
       return res.status(401).json({ success: false, message: 'Invalid admin credentials' });
     }
 
-    // Try to find the admin user to attach to token, or create one if it doesn't exist
-    let adminUser = await User.findOne({ email: 'admin@smartgovernance.gov.in', role: 'admin' });
-    
+    // Find or create the admin user in DB to get an ID
+    let adminUser = await User.findOne({ email: adminConfig.email, role: 'admin' });
+
     if (!adminUser) {
-       adminUser = await User.create({
-          fullName: 'System Administrator (Tahsildar)',
-          email: 'admin@smartgovernance.gov.in',
-          role: 'admin'
-       });
+      adminUser = await User.create({
+        fullName: adminConfig.fullName,
+        email: adminConfig.email,
+        role: 'admin',
+        allocatedAreas: adminConfig.allocatedAreas
+      });
+    } else {
+      // Ensure allocatedAreas are up to date with mock config
+      adminUser.allocatedAreas = adminConfig.allocatedAreas;
+      adminUser.fullName = adminConfig.fullName;
+      await adminUser.save();
     }
 
     sendTokenResponse(adminUser, 200, res);
   } catch (err) {
-     res.status(500).json({ success: false, message: 'Server error during admin login' });
+    console.error("ADMIN LOGIN ERROR:", err);
+    res.status(500).json({ success: false, message: 'Server error during admin login' });
   }
 };

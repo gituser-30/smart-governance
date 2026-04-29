@@ -32,7 +32,9 @@ exports.getMyGrievances = async (req, res, next) => {
 exports.getAllGrievances = async (req, res, next) => {
   try {
     let query = {};
-    if (req.user.area) {
+    if (req.user.role === 'admin' && req.user.allocatedAreas && req.user.allocatedAreas.length > 0) {
+       query.area = { $in: req.user.allocatedAreas };
+    } else if (req.user.area) {
        query.area = req.user.area;
     }
     const grievances = await Grievance.find(query).populate('user', 'fullName email').sort('-createdAt');
