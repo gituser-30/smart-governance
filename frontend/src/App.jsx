@@ -10,6 +10,12 @@ import AdminDashboard from './pages/AdminDashboard';
 import AdminAuth from './pages/AdminAuth';
 import CertificateView from './pages/CertificateView';
 
+import Certificates from './pages/Certificates';
+import Grievances from './pages/Grievances';
+import TrackStatus from './pages/TrackStatus';
+import Settings from './pages/Settings';
+import HelpSupport from './pages/HelpSupport';
+
 const ProtectedRoute = ({ children }) => {
   const { user, loading } = useAuth();
   if (loading) return <div>Loading...</div>;
@@ -27,6 +33,11 @@ export default function App() {
             <Route path="/auth" element={<Auth />} />
             <Route path="/admin-login" element={<AdminAuth />} />
             <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+            <Route path="/dashboard/certificates" element={<ProtectedRoute><Certificates /></ProtectedRoute>} />
+            <Route path="/dashboard/grievances" element={<ProtectedRoute><Grievances /></ProtectedRoute>} />
+            <Route path="/dashboard/track" element={<ProtectedRoute><TrackStatus /></ProtectedRoute>} />
+            <Route path="/dashboard/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+            <Route path="/dashboard/support" element={<ProtectedRoute><HelpSupport /></ProtectedRoute>} />
             <Route path="/apply" element={<ProtectedRoute><ApplyForm /></ProtectedRoute>} />
             <Route path="/certificate/:trackingId" element={<ProtectedRoute><CertificateView /></ProtectedRoute>} />
             <Route path="/admin" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
