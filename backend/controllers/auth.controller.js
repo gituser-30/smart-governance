@@ -101,14 +101,15 @@ exports.googleLogin = async (req, res, next) => {
     });
     const payload = ticket.getPayload();
 
-    const { email, name, sub: googleId } = payload;
+    const { email, name, sub: googleId, picture: avatar } = payload;
 
     let user = await User.findOne({ email });
 
     if (user) {
       // Unify account if email exists but no googleId
-      if (!user.googleId) {
+      if (!user.googleId || !user.avatar) {
         user.googleId = googleId;
+        user.avatar = avatar;
         await user.save();
       }
 
@@ -126,6 +127,7 @@ exports.googleLogin = async (req, res, next) => {
         fullName: name,
         email,
         googleId,
+        avatar,
         role: 'citizen' // password omitted voluntarily
       });
 

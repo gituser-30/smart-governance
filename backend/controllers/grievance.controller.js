@@ -37,7 +37,7 @@ exports.getAllGrievances = async (req, res, next) => {
     } else if (req.user.area) {
        query.area = req.user.area;
     }
-    const grievances = await Grievance.find(query).populate('user', 'fullName email').sort('-createdAt');
+    const grievances = await Grievance.find(query).populate('user', 'fullName email').sort('createdAt');
     res.status(200).json({ success: true, data: grievances });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });

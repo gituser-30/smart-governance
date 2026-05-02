@@ -2,6 +2,7 @@ const Application = require('../models/Application');
 const cloudinary = require('../config/cloudinary');
 const axios = require('axios');
 const Tesseract = require('tesseract.js');
+const sendEmail = require('../utils/sendEmail');
 
 
 // Helper to communicate with Python AI Service
@@ -62,17 +63,24 @@ exports.analyzeDocuments = async (req, res, next) => {
         const base64Data = dataURI.split(',')[1];
         const imageBuffer = Buffer.from(base64Data, 'base64');
         const image = await Jimp.read(imageBuffer);
-        image.greyscale().contrast(0.6).normalize();
-        if (image.getWidth() > 1500) {
-          image.resize(1500, Jimp.AUTO);
+        
+        // Improved preprocessing for OCR
+        image.greyscale()
+             .contrast(0.2) // Subtle contrast boost
+             .normalize();
+             
+        if (image.getWidth() > 2000) {
+          image.resize(2000, Jimp.AUTO);
         }
-        // Compress aggressively to prevent BSON limits
-        image.quality(40);
+        
+        // Higher quality (80) for better text clarity
+        image.quality(80);
 
         const processedBuffer = await image.getBufferAsync(Jimp.MIME_JPEG);
         processedDataURI = 'data:image/jpeg;base64,' + processedBuffer.toString('base64');
       } catch (imgErr) {
         console.log("Jimp Error, falling back to raw image...");
+        console.error("Jimp Detail:", imgErr.message);
       }
 
       try {
@@ -237,7 +245,7 @@ exports.getAllApplications = async (req, res, next) => {
        query.area = req.user.area; // Fallback to single area if defined
     }
     
-    const applications = await Application.find(query).populate('user', 'fullName email').sort('-createdAt');
+    const applications = await Application.find(query).populate('user', 'fullName email avatar').sort('createdAt');
     res.status(200).json({ success: true, data: applications });
   } catch (err) {
     res.status(500).json({ success: false, message: 'Server Error' });
@@ -249,15 +257,41 @@ exports.getAllApplications = async (req, res, next) => {
 exports.updateStatus = async (req, res, next) => {
   try {
     const { status } = req.body;
+    
+    // Use findByIdAndUpdate to avoid full validation errors on old records (like missing 'area')
+    // We populate 'user' so we have the email for the notification
     const application = await Application.findByIdAndUpdate(
       req.params.id,
       { status, updatedAt: Date.now() },
       { new: true, runValidators: true }
-    );
+    ).populate('user', 'fullName email avatar');
+    
     if (!application) return res.status(404).json({ success: false, message: 'Application not found' });
+
+    // Send email if approved
+    if (status === 'Approved' && application.user && application.user.email) {
+      await sendEmail({
+        to: application.user.email,
+        subject: 'Application Approved - Smart Governance Portal',
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 10px;">
+            <h2 style="color: #2c3e50;">Application Approved!</h2>
+            <p>Dear <strong>${application.user.fullName}</strong>,</p>
+            <p>We are pleased to inform you that your application for <strong>${application.certificateType} Certificate</strong> has been approved.</p>
+            <div style="background-color: #f9f9f9; padding: 15px; border-radius: 5px; margin: 20px 0;">
+              <p style="margin: 0;"><strong>Tracking ID:</strong> #${application.trackingId}</p>
+              <p style="margin: 5px 0 0 0;"><strong>Status:</strong> Approved</p>
+            </div>
+            <p>You can now log in to the portal to download your certificate.</p>
+            <p>Best regards,<br><strong>CertifyGov Portal Team</strong></p>
+          </div>
+        `
+      });
+    }
 
     res.status(200).json({ success: true, data: application });
   } catch (err) {
+    console.error("Update Status Error:", err);
     res.status(500).json({ success: false, message: 'Server Error' });
   }
 };
@@ -266,7 +300,7 @@ exports.updateStatus = async (req, res, next) => {
 // @route   GET /api/applications/track/:trackingId
 exports.trackStatus = async (req, res, next) => {
   try {
-    const application = await Application.findOne({ trackingId: req.params.trackingId }).populate('user', 'fullName email');
+    const application = await Application.findOne({ trackingId: req.params.trackingId }).populate('user', 'fullName email avatar');
     if (!application) {
       return res.status(404).json({ success: false, message: 'Application not found' });
     }

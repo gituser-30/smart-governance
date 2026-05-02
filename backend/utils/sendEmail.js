@@ -49,12 +49,10 @@
 const nodemailer = require('nodemailer');
 
 const transporter = nodemailer.createTransport({
-  host: process.env.EMAIL_HOST || 'smtp.gmail.com',
-  port: process.env.EMAIL_PORT || 587,
-  secure: false, // true for 465, false for 587
+  service: 'gmail',
   auth: {
-    user: process.env.EMAIL_USER,   // your Gmail / SMTP user
-    pass: process.env.EMAIL_PASS,   // App Password (not your real password)
+    user: process.env.SMTP_USER,   // your Gmail / SMTP user
+    pass: process.env.SMTP_PASS,   // App Password (not your real password)
   },
 });
 
@@ -66,16 +64,23 @@ const transporter = nodemailer.createTransport({
  * @param {string} options.html      - HTML body
  */
 const sendEmail = async ({ to, subject, html }) => {
-  const mailOptions = {
-    from: `"CertifyGov Portal" <${process.env.EMAIL_USER}>`,
-    to,
-    subject,
-    html,
-  };
+  try {
+    const mailOptions = {
+      from: `"CertifyGov Portal" <${process.env.SMTP_USER}>`,
+      to,
+      subject,
+      html,
+    };
 
-  const info = await transporter.sendMail(mailOptions);
-  console.log(`✅ Email sent to ${to} — MessageId: ${info.messageId}`);
-  return info;
+    const info = await transporter.sendMail(mailOptions);
+    console.log(`✅ Email sent to ${to} — MessageId: ${info.messageId}`);
+    return info;
+  } catch (error) {
+    console.error(`❌ Email sending failed: ${error.message}`);
+    // Don't throw if you don't want to crash the whole request, 
+    // or do throw if email is critical.
+    return null;
+  }
 };
 
 module.exports = sendEmail;

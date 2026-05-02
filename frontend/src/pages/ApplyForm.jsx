@@ -25,10 +25,17 @@ export default function ApplyForm() {
   // Final Form State
   const [formFields, setFormFields] = useState({
      fullName: user?.fullName || '',
+     fatherName: '',
      idNumber: '',
      address: '',
+     village: '',
+     taluka: '',
+     district: '',
+     pincode: '',
      dob: '',
      income: '',
+     financialYear: '2024-2025',
+     caste: '',
      phone: '',
      purpose: '',
      area: ''
@@ -38,9 +45,9 @@ export default function ApplyForm() {
   const [trackingId, setTrackingId] = useState('');
 
   const documentRequirements = {
-    'Income': ['Aadhar Card', 'Income Proof'],
+    'Income': ['Aadhar Card', 'Income Proof', 'Passport Photo'],
     'Domicile': ['Aadhar Card', 'Birth Certificate'],
-    'EWS': ['Aadhar Card', 'Income Certificate', 'Caste Certificate'],
+    'EWS': ['Aadhar Card', 'Income Certificate', 'Caste Certificate', 'Passport Photo'],
     'Birth': ['Hospital Summary', 'Parents Aadhar Card']
   };
 
@@ -298,6 +305,43 @@ export default function ApplyForm() {
                          <label className="block text-xs font-bold text-navy-300 uppercase mb-1.5">Address</label>
                          <textarea name="address" value={formFields.address} onChange={handleFieldChange} rows="2" className="gov-input resize-none" />
                       </div>
+
+                      {(certType === 'Income' || certType === 'EWS') && (
+                        <>
+                          <div>
+                             <label className="block text-xs font-bold text-navy-300 uppercase mb-1.5">Father's Name <span className="text-red-400">*</span></label>
+                             <input required type="text" name="fatherName" value={formFields.fatherName} onChange={handleFieldChange} className="gov-input" placeholder="Mr. Full Name" />
+                          </div>
+                          <div>
+                             <label className="block text-xs font-bold text-navy-300 uppercase mb-1.5">Caste/Category <span className="text-red-400">*</span></label>
+                             <input required type="text" name="caste" value={formFields.caste} onChange={handleFieldChange} className="gov-input" placeholder="e.g. MARATHA / OPEN" />
+                          </div>
+                          <div>
+                             <label className="block text-xs font-bold text-navy-300 uppercase mb-1.5">Village <span className="text-red-400">*</span></label>
+                             <input required type="text" name="village" value={formFields.village} onChange={handleFieldChange} className="gov-input" />
+                          </div>
+                          <div>
+                             <label className="block text-xs font-bold text-navy-300 uppercase mb-1.5">Taluka <span className="text-red-400">*</span></label>
+                             <input required type="text" name="taluka" value={formFields.taluka} onChange={handleFieldChange} className="gov-input" />
+                          </div>
+                          <div>
+                             <label className="block text-xs font-bold text-navy-300 uppercase mb-1.5">District <span className="text-red-400">*</span></label>
+                             <input required type="text" name="district" value={formFields.district} onChange={handleFieldChange} className="gov-input" />
+                          </div>
+                          <div>
+                             <label className="block text-xs font-bold text-navy-300 uppercase mb-1.5">Pincode <span className="text-red-400">*</span></label>
+                             <input required type="text" name="pincode" value={formFields.pincode} onChange={handleFieldChange} className="gov-input" />
+                          </div>
+                          <div>
+                             <label className="block text-xs font-bold text-navy-300 uppercase mb-1.5">Financial Year <span className="text-red-400">*</span></label>
+                             <select required name="financialYear" value={formFields.financialYear} onChange={handleFieldChange} className="gov-input">
+                                <option value="2023-2024">2023-2024</option>
+                                <option value="2024-2025">2024-2025</option>
+                                <option value="2025-2026">2025-2026</option>
+                             </select>
+                          </div>
+                        </>
+                      )}
 
                       <div className="col-span-1 md:col-span-2 mt-3 pt-4 border-t border-navy-600/20">
                         <h4 className="text-sm font-bold text-white uppercase tracking-wider border-l-3 border-gov-green pl-3 mb-1">Additional Information</h4>

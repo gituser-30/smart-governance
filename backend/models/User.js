@@ -9,6 +9,7 @@ const UserSchema = new mongoose.Schema({
   role: { type: String, enum: ['citizen', 'admin'], default: 'citizen' },
   area: { type: String }, // Used for citizens to mark their default area
   allocatedAreas: { type: [String], default: [] }, // Used for admins (Tahsildars) to manage multiple jurisdictions
+  avatar: { type: String }, // User profile picture (Google or Uploaded)
   createdAt: { type: Date, default: Date.now }
 });
 
