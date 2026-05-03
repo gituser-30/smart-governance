@@ -33,6 +33,10 @@ export default function ApplyForm() {
      district: '',
      pincode: '',
      dob: '',
+     placeOfBirth: '',
+     motherName: '',
+     gender: '',
+     residencyPeriod: '15',
      income: '',
      financialYear: '2024-2025',
      caste: '',
@@ -47,7 +51,7 @@ export default function ApplyForm() {
   const documentRequirements = {
     'Income': ['Aadhar Card', 'Income Proof', 'Passport Photo'],
     'Domicile': ['Aadhar Card', 'Birth Certificate'],
-    'EWS': ['Aadhar Card', 'Income Certificate', 'Caste Certificate', 'Passport Photo'],
+    'EWS': ['Aadhar Card', 'Income Certificate', 'Passport Photo'],
     'Birth': ['Hospital Summary', 'Parents Aadhar Card']
   };
 
@@ -97,14 +101,22 @@ export default function ApplyForm() {
          setExtractedData(extracted);
          setUploadedUrls(resData.data.documents);
          
-         setFormFields({
-           ...formFields,
-           fullName: extracted.fullName || formFields.fullName,
-           idNumber: extracted.idNumber || '',
-           address: extracted.address || '',
-           dob: extracted.dob || '',
-           income: extracted.income || ''
-         });
+         setFormFields((prev) => ({
+           ...prev,
+           fullName: extracted.fullName || prev.fullName,
+           idNumber: extracted.idNumber || prev.idNumber,
+           address: extracted.address || prev.address,
+           dob: extracted.dob || prev.dob,
+           income: extracted.income || prev.income,
+           gender: extracted.gender || prev.gender,
+           fatherName: extracted.fatherName || prev.fatherName,
+           motherName: extracted.motherName || prev.motherName,
+           placeOfBirth: extracted.placeOfBirth || prev.placeOfBirth,
+           village: extracted.village || prev.village,
+           taluka: extracted.taluka || prev.taluka,
+           district: extracted.district || prev.district,
+           pincode: extracted.pincode || prev.pincode
+         }));
          
          setStep(2);
       }
@@ -339,6 +351,57 @@ export default function ApplyForm() {
                                 <option value="2024-2025">2024-2025</option>
                                 <option value="2025-2026">2025-2026</option>
                              </select>
+                          </div>
+                        </>
+                      )}
+                      
+                      {certType === 'Birth' && (
+                        <>
+                          <div>
+                             <label className="block text-xs font-bold text-navy-300 uppercase mb-1.5">Father's Name <span className="text-red-400">*</span></label>
+                             <input required type="text" name="fatherName" value={formFields.fatherName} onChange={handleFieldChange} className="gov-input" />
+                          </div>
+                          <div>
+                             <label className="block text-xs font-bold text-navy-300 uppercase mb-1.5">Mother's Name <span className="text-red-400">*</span></label>
+                             <input required type="text" name="motherName" value={formFields.motherName} onChange={handleFieldChange} className="gov-input" />
+                          </div>
+                          <div>
+                             <label className="block text-xs font-bold text-navy-300 uppercase mb-1.5">Gender <span className="text-red-400">*</span></label>
+                             <select required name="gender" value={formFields.gender} onChange={handleFieldChange} className="gov-input">
+                                <option value="">Select Gender</option>
+                                <option value="Male">Male</option>
+                                <option value="Female">Female</option>
+                                <option value="Other">Other</option>
+                             </select>
+                          </div>
+                          <div>
+                             <label className="block text-xs font-bold text-navy-300 uppercase mb-1.5">Place of Birth <span className="text-red-400">*</span></label>
+                             <input required type="text" name="placeOfBirth" value={formFields.placeOfBirth} onChange={handleFieldChange} className="gov-input" placeholder="Hospital / Address" />
+                          </div>
+                        </>
+                      )}
+
+                      {certType === 'Domicile' && (
+                        <>
+                          <div>
+                             <label className="block text-xs font-bold text-navy-300 uppercase mb-1.5">Father's Name <span className="text-red-400">*</span></label>
+                             <input required type="text" name="fatherName" value={formFields.fatherName} onChange={handleFieldChange} className="gov-input" />
+                          </div>
+                          <div>
+                             <label className="block text-xs font-bold text-navy-300 uppercase mb-1.5">Place of Birth <span className="text-red-400">*</span></label>
+                             <input required type="text" name="placeOfBirth" value={formFields.placeOfBirth} onChange={handleFieldChange} className="gov-input" />
+                          </div>
+                          <div>
+                             <label className="block text-xs font-bold text-navy-300 uppercase mb-1.5">Village <span className="text-red-400">*</span></label>
+                             <input required type="text" name="village" value={formFields.village} onChange={handleFieldChange} className="gov-input" />
+                          </div>
+                          <div>
+                             <label className="block text-xs font-bold text-navy-300 uppercase mb-1.5">District <span className="text-red-400">*</span></label>
+                             <input required type="text" name="district" value={formFields.district} onChange={handleFieldChange} className="gov-input" />
+                          </div>
+                          <div>
+                             <label className="block text-xs font-bold text-navy-300 uppercase mb-1.5">Residency Period (Years) <span className="text-red-400">*</span></label>
+                             <input required type="number" name="residencyPeriod" value={formFields.residencyPeriod} onChange={handleFieldChange} className="gov-input" />
                           </div>
                         </>
                       )}

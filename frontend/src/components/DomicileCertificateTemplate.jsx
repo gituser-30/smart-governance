@@ -1,13 +1,9 @@
 import React from 'react';
 import { Check } from 'lucide-react';
 
-export default function IncomeCertificateTemplate({ data, trackingId }) {
+const DomicileCertificateTemplate = ({ data, trackingId }) => {
   const { formFields, updatedAt } = data;
-  const issueDate = new Date(updatedAt).toLocaleDateString('en-IN', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric'
-  });
+  const issueDate = new Date(updatedAt).toLocaleDateString('en-GB');
 
   return (
     <div className="bg-white p-8 font-serif text-black border-[1.5pt] border-black max-w-[800px] mx-auto my-4 relative shadow-sm print:shadow-none print:my-0 print:border-black print:text-black"
@@ -30,7 +26,7 @@ export default function IncomeCertificateTemplate({ data, trackingId }) {
           <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSmeq20W3b8502gFTTwqvK7iHhUAwaQeSEG6w&s" alt="Govt Emblem" className="w-16 h-16 object-contain block" crossOrigin="anonymous" />
         </div>
         <div className="text-center flex-grow px-4">
-          <h4 className="text-xs font-bold uppercase underline">Annexure-I</h4>
+          <h4 className="text-xs font-bold uppercase underline">FORM NO. 1 (See Rule 3)</h4>
           <h2 className="text-base font-bold uppercase mt-1">Government of Maharashtra</h2>
           <h3 className="text-sm font-bold uppercase">Office of the Tahsildar, {formFields.area || 'Bhudargad'}</h3>
         </div>
@@ -43,68 +39,43 @@ export default function IncomeCertificateTemplate({ data, trackingId }) {
                 ))}
               </div>
             </div>
-            <p className="font-bold force-black">Tracking ID: {trackingId}</p>
-          </div>
-          {/* <img src="https://aaplesarkar.mahaonline.gov.in/Images/AapleSarkar.png" alt="Aaple Sarkar" className="w-24 h-12 object-contain block" crossOrigin="anonymous" /> */}
-        </div>
-      </div>
-
-      {/* Barcode and Validity */}
-      <div className="flex justify-between items-center mb-6 text-[10px]">
-        <div className="flex flex-col gap-1">
-          <div className="border border-black p-1">
-            <span className="font-bold">Supporting Documents:</span>
-            <ul className="list-disc pl-4 mt-1">
-              <li>Ration Card</li>
-              <li>Income Proof (Form 16)</li>
-              <li>Self Declaration</li>
-            </ul>
+            <p className="font-bold force-black text-[10px]">Tracking ID: {trackingId}</p>
           </div>
         </div>
       </div>
 
-      {/* Main Title */}
-      <div className="text-center mb-6">
-        <h1 className="text-lg font-bold uppercase tracking-tight underline decoration-1 underline-offset-4">
-          Income Certificate
-        </h1>
-      </div>
-
-      <div className="flex justify-between items-start mb-6 text-[10px]">
-        <div className="flex flex-col gap-1">
-          <p><span className="font-bold">Certificate No:</span> {trackingId.toUpperCase()}</p>
-          <p><span className="font-bold">Date:</span> {issueDate}</p>
-        </div>
-        <div className="text-right">
-          <p><span className="font-bold">VALID FOR THE YEAR:</span> {formFields.financialYear || '2026-2027'}</p>
-        </div>
+      <div className="text-center mb-8">
+        <h1 className="text-xl font-bold uppercase tracking-widest border-b-2 border-black inline-block pb-1">Age, Nationality and Domicile Certificate</h1>
       </div>
 
       {/* Certificate Body */}
-      <div className="text-sm leading-relaxed text-justify space-y-6 mb-10">
+      <div className="text-sm leading-loose text-justify space-y-6 mb-10 px-4">
         <p>
-          This is to certify that Shri/Smt./Kumari <span className="font-bold border-b border-black px-1">{formFields.fullName}</span>,
-          son/daughter/wife of <span className="font-bold border-b border-black px-1">{formFields.fatherName || 'N/A'}</span>,
-          permanent resident of <span className="font-bold border-b border-black px-1">{formFields.village || 'N/A'}</span>,
-          Village/Street <span className="font-bold border-b border-black px-1">{formFields.address || 'N/A'}</span>,
-          Tahsil <span className="font-bold border-b border-black px-1">{formFields.taluka || formFields.area || 'Bhudargad'}</span>,
-          District <span className="font-bold border-b border-black px-1">{formFields.district || 'N/A'}</span> in the State of <span className="font-bold underline">MAHARASHTRA</span>.
+          Certified that Shri/Smt./Kumari <span className="font-bold border-b border-black px-1">{formFields.fullName}</span>, 
+          son/daughter of <span className="font-bold border-b border-black px-1">{formFields.fatherName || 'N/A'}</span>, 
+          residing at <span className="font-bold border-b border-black px-1">{formFields.address || 'N/A'}</span>, 
+          Village <span className="font-bold border-b border-black px-1">{formFields.village || 'N/A'}</span>, 
+          Tahsil <span className="font-bold border-b border-black px-1">{formFields.taluka || formFields.area || 'Bhudargad'}</span>, 
+          District <span className="font-bold border-b border-black px-1">{formFields.district || 'N/A'}</span>, 
+          was born on <span className="font-bold border-b border-black px-1">{formFields.dob || 'N/A'}</span> at 
+          <span className="font-bold border-b border-black px-1">{formFields.placeOfBirth || 'N/A'}</span>.
         </p>
 
         <p>
-          The gross annual family income of the said person is verified to be 
-          <span className="font-bold border-b border-black px-2 mx-1">₹{formFields.income || 'N/A'}</span> 
-          (Rupees <span className="font-bold italic">{formFields.incomeInWords || '...'}</span> only) 
-          for the financial year <span className="font-bold border-b border-black px-1">{formFields.financialYear || '2024-2025'}</span>.
+          He/She is a citizen of India. 
         </p>
 
         <p>
-          This certificate is issued on the basis of the documents submitted by the applicant and local inquiry conducted by the department.
+          He/She has been residing in the State of Maharashtra for a period of <span className="font-bold border-b border-black px-2">{formFields.residencyPeriod || '15'}</span> years.
+        </p>
+
+        <p>
+          This certificate is issued on the basis of documentary evidence produced by him/her and after local inquiry.
         </p>
       </div>
 
       {/* Photo and Signature Section */}
-      <div className="flex justify-between items-end mt-16">
+      <div className="flex justify-between items-end mt-16 px-4">
         <div className="w-32 h-40 border border-black flex items-center justify-center text-[10px] text-black bg-gray-50 print-bg-gray relative overflow-hidden">
           {(() => {
             const photoDoc = data.documents?.find(d => d.type === 'Passport Photo');
@@ -143,18 +114,18 @@ export default function IncomeCertificateTemplate({ data, trackingId }) {
             </div>
           </div>
           <div className="w-48 border-b border-black mx-auto"></div>
-          <p className="font-bold text-xs mt-1 uppercase force-black">Signature with seal of Office</p>
-          <p className="text-[10px] text-black italic">Name: {formFields.area || 'Bhudargad'} Revenue Officer</p>
-          <p className="text-[10px] text-black">Designation: Tahsildar</p>
+          <p className="font-bold text-xs mt-1 uppercase force-black">Executive Magistrate / Tahsildar</p>
+          <p className="text-[10px] text-black italic">Office: {formFields.area || 'Bhudargad'}</p>
         </div>
       </div>
 
-      {/* Footer info */}
-      <div className="mt-12 pt-4 border-t border-dotted border-gray-400 text-[8px] flex justify-between text-gray-500 uppercase font-sans">
-        <div>Place: {formFields.taluka || formFields.area || 'Bhudargad'}</div>
-        <div>Generated by Smart Governance System - Govt of Maharashtra</div>
+      {/* Verification footer */}
+      <div className="mt-12 pt-4 border-t border-gray-300 text-[9px] text-center text-gray-600">
+        <p>This is a computer generated certificate. For verification, please visit http://aaplesarkar.mahaonline.gov.in</p>
+        <p className="mt-1 font-bold">Barcoded Certificate No: {trackingId.toUpperCase()}</p>
       </div>
-
     </div>
   );
-}
+};
+
+export default DomicileCertificateTemplate;

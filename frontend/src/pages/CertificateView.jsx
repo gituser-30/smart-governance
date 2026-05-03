@@ -5,6 +5,9 @@ import { useAuth } from '../context/AuthContext';
 import { motion } from 'framer-motion';
 import { DownloadCloud, ArrowLeft, ShieldCheck, Stamp, Printer } from 'lucide-react';
 import IncomeCertificateTemplate from '../components/IncomeCertificateTemplate';
+import EWSCertificateTemplate from '../components/EWSCertificateTemplate';
+import BirthCertificateTemplate from '../components/BirthCertificateTemplate';
+import DomicileCertificateTemplate from '../components/DomicileCertificateTemplate';
 
 export default function CertificateView() {
   const { trackingId } = useParams();
@@ -67,9 +70,12 @@ export default function CertificateView() {
       </div>
 
       {/* Certificate Rendering */}
-      {certificateType === 'Income' || certificateType === 'EWS' ? (
-         <IncomeCertificateTemplate data={appData} trackingId={trackingId} />
-      ) : (
+      {certificateType === 'Income' && <IncomeCertificateTemplate data={appData} trackingId={trackingId} />}
+      {certificateType === 'EWS' && <EWSCertificateTemplate data={appData} trackingId={trackingId} />}
+      {certificateType === 'Birth' && <BirthCertificateTemplate data={appData} trackingId={trackingId} />}
+      {certificateType === 'Domicile' && <DomicileCertificateTemplate data={appData} trackingId={trackingId} />}
+      
+      {!['Income', 'EWS', 'Birth', 'Domicile'].includes(certificateType) && (
          <motion.div 
             initial={{ opacity: 0, y: 20 }} 
             animate={{ opacity: 1, y: 0 }}

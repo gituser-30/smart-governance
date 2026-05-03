@@ -84,7 +84,7 @@ exports.analyzeDocuments = async (req, res, next) => {
       }
 
       try {
-        const worker = await Tesseract.createWorker('eng');
+        const worker = await Tesseract.createWorker(['eng', 'mar']);
         const ret = await worker.recognize(processedDataURI);
         rawExtractedText = ret.data.text;
         await worker.terminate();
@@ -115,16 +115,21 @@ exports.analyzeDocuments = async (req, res, next) => {
       }
 
       // 2. Pass to AI for Synchronous Semantic Check
-      const aiResult = await verifyWithAI(documentUrl, assignedType, rawExtractedText);
-      const aiData = aiResult.data || {};
+      // SKIP AI CHECK for Passport Photo as it has no text to analyze
+      let aiData = { isValid: true, extractedData: {} };
+      
+      if (assignedType !== 'Passport Photo') {
+        const aiResult = await verifyWithAI(documentUrl, assignedType, rawExtractedText);
+        aiData = aiResult.data || {};
 
-      if (aiData.isValid === false) {
-        return res.status(200).json({
-          success: false,
-          message: `AI Rejected Document (${assignedType})`,
-          reason: aiData.rejectionReason || "Invalid document type or expired.",
-          rejectedDocument: assignedType
-        });
+        if (aiData.isValid === false) {
+          return res.status(200).json({
+            success: false,
+            message: `AI Rejected Document (${assignedType})`,
+            reason: aiData.rejectionReason || "Invalid document type or expired.",
+            rejectedDocument: assignedType
+          });
+        }
       }
 
       // Aggregate OCR fields intelligently to prioritize Aadhar details
@@ -159,7 +164,50 @@ exports.analyzeDocuments = async (req, res, next) => {
       });
     }
 
-    // 3. Return Success to Frontend for Final Form viewing
+    // 3. Cross-Document Consistency Check
+    // If we have multiple documents, compare Full Name and DOB across them
+    if (uploadedDocs.length > 1) {
+       const masterDoc = uploadedDocs[0];
+       const masterName = masterDoc.extractedData.fullName?.toLowerCase().trim();
+       const masterDOB = masterDoc.extractedData.dob;
+
+       for (let j = 1; j < uploadedDocs.length; j++) {
+          const currentDoc = uploadedDocs[j];
+          const currentName = currentDoc.extractedData.fullName?.toLowerCase().trim();
+          const currentDOB = currentDoc.extractedData.dob;
+
+          // Check Name (allow slight variations if one is null, but if both present, they must match loosely)
+          if (masterName && currentName) {
+             const dist = (a, b) => { // Simple overlap check
+                const setA = new Set(a.split(' '));
+                const setB = new Set(b.split(' '));
+                const intersect = new Set([...setA].filter(x => setB.has(x)));
+                return intersect.size / Math.max(setA.size, setB.size);
+             };
+
+             if (dist(masterName, currentName) < 0.5) {
+                return res.status(200).json({
+                   success: false,
+                   message: 'Documents Info Mismatch',
+                   reason: `The name on '${currentDoc.type}' (${currentDoc.extractedData.fullName}) does not match '${masterDoc.type}' (${masterDoc.extractedData.fullName}). Please upload documents belonging to the same person.`,
+                   rejectedDocument: currentDoc.type
+                });
+             }
+          }
+
+          // Check DOB
+          if (masterDOB && currentDOB && masterDOB !== currentDOB) {
+             return res.status(200).json({
+                success: false,
+                message: 'Documents Info Mismatch',
+                reason: `The Date of Birth on '${currentDoc.type}' (${currentDoc.extractedData.dob}) does not match '${masterDoc.type}' (${masterDoc.extractedData.dob}).`,
+                rejectedDocument: currentDoc.type
+             });
+          }
+       }
+    }
+
+    // 4. Return Success to Frontend for Final Form viewing
     res.status(200).json({
       success: true,
       message: 'Documents AI Verified Successfully',
