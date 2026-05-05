@@ -9,6 +9,7 @@ import ApplyForm from './pages/ApplyForm';
 import AdminDashboard from './pages/AdminDashboard';
 import AdminAuth from './pages/AdminAuth';
 import CertificateView from './pages/CertificateView';
+import AuditLogs from './pages/AuditLogs';
 
 import Certificates from './pages/Certificates';
 import Grievances from './pages/Grievances';
@@ -41,6 +42,7 @@ export default function App() {
             <Route path="/apply" element={<ProtectedRoute><ApplyForm /></ProtectedRoute>} />
             <Route path="/certificate/:trackingId" element={<ProtectedRoute><CertificateView /></ProtectedRoute>} />
             <Route path="/admin" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
+            <Route path="/admin/audit-logs" element={<ProtectedRoute><AuditLogs /></ProtectedRoute>} />
           </Routes>
         </Router>
       </AuthProvider>

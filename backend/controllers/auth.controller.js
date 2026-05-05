@@ -1,4 +1,6 @@
 const User = require('../models/User');
+const OTP = require('../models/OTP');
+const AuditLog = require('../models/AuditLog');
 const jwt = require('jsonwebtoken');
 const { OAuth2Client } = require('google-auth-library');
 const sendEmail = require('../utils/sendEmail');
@@ -23,11 +25,91 @@ const sendTokenResponse = (user, statusCode, res) => {
   });
 };
 
+// @desc    Send OTP to email
+// @route   POST /api/auth/send-otp
+exports.sendOTP = async (req, res, next) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({ success: false, message: 'Please provide an email' });
+    }
+
+    // Check if user already exists
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res.status(400).json({ success: false, message: 'User with this email already exists' });
+    }
+
+    // Generate 6-digit OTP
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+
+    // Save to DB (overwrite if already exists for this email)
+    await OTP.findOneAndUpdate(
+      { email },
+      { otp, createdAt: Date.now() },
+      { upsert: true, new: true }
+    );
+
+    // Send Email
+    await sendEmail({
+      to: email,
+      subject: 'Your Verification Code for Smart Governance',
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 10px;">
+          <h2 style="color: #f58220; text-align: center;">Verification Code</h2>
+          <p>Hello,</p>
+          <p>Your verification code for the Smart Governance Portal is:</p>
+          <div style="background: #f4f4f4; padding: 15px; text-align: center; font-size: 24px; font-weight: bold; letter-spacing: 5px; color: #333; border-radius: 5px;">
+            ${otp}
+          </div>
+          <p style="margin-top: 20px;">This code is valid for 10 minutes. If you did not request this, please ignore this email.</p>
+          <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">
+          <p style="font-size: 12px; color: #777; text-align: center;">Smart Governance Team</p>
+        </div>
+      `
+    });
+
+    res.status(200).json({ success: true, message: 'OTP sent to email' });
+  } catch (err) {
+    console.error('SEND OTP ERROR:', err);
+    res.status(500).json({ success: false, message: 'Error sending OTP' });
+  }
+};
+
+// @desc    Verify OTP
+// @route   POST /api/auth/verify-otp
+exports.verifyOTP = async (req, res, next) => {
+  try {
+    const { email, otp } = req.body;
+
+    if (!email || !otp) {
+      return res.status(400).json({ success: false, message: 'Please provide email and OTP' });
+    }
+
+    const otpData = await OTP.findOne({ email, otp });
+
+    if (!otpData) {
+      return res.status(400).json({ success: false, message: 'Invalid or expired OTP' });
+    }
+
+    res.status(200).json({ success: true, message: 'OTP verified successfully' });
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'Error verifying OTP' });
+  }
+};
+
 // @desc    Register a citizen
 // @route   POST /api/auth/register
 exports.register = async (req, res, next) => {
   try {
-    const { fullName, email, password } = req.body;
+    const { fullName, email, password, otp } = req.body;
+
+    // Final verification of OTP before creating user
+    const otpData = await OTP.findOne({ email, otp });
+    if (!otpData) {
+      return res.status(400).json({ success: false, message: 'Invalid or expired OTP. Please verify again.' });
+    }
 
     const existingUser = await User.findOne({ email });
     if (existingUser) {
@@ -39,6 +121,18 @@ exports.register = async (req, res, next) => {
       email,
       password,
       role: 'citizen'
+    });
+
+    // Clear OTP after successful registration
+    await OTP.deleteOne({ email });
+
+    // Audit Log
+    await AuditLog.create({
+      userId: user._id,
+      action: 'REGISTER_SUCCESS',
+      email: user.email,
+      ipAddress: req.ip,
+      userAgent: req.headers['user-agent']
     });
 
     // Send Welcome Email Async
@@ -72,8 +166,25 @@ exports.login = async (req, res, next) => {
 
     const isMatch = await user.matchPassword(password);
     if (!isMatch) {
+      // Audit Log for failure
+      await AuditLog.create({
+        action: 'LOGIN_FAILURE',
+        email,
+        ipAddress: req.ip,
+        userAgent: req.headers['user-agent'],
+        details: { reason: 'Invalid password' }
+      });
       return res.status(401).json({ success: false, message: 'Invalid credentials' });
     }
+
+    // Audit Log for success
+    await AuditLog.create({
+      userId: user._id,
+      action: 'LOGIN_SUCCESS',
+      email: user.email,
+      ipAddress: req.ip,
+      userAgent: req.headers['user-agent']
+    });
 
     // Security Alert Email
     sendEmail({
@@ -120,6 +231,16 @@ exports.googleLogin = async (req, res, next) => {
         html: `<h3>Hello ${user.fullName},</h3><p>Your Smart Governance Account was accessed via Google Sign-In.</p>`
       }).catch(console.error);
 
+      // Audit Log
+      await AuditLog.create({
+        userId: user._id,
+        action: 'GOOGLE_AUTH',
+        email: user.email,
+        ipAddress: req.ip,
+        userAgent: req.headers['user-agent'],
+        details: { newUser: false }
+      });
+
       return sendTokenResponse(user, 200, res);
     } else {
       // Create user
@@ -129,6 +250,16 @@ exports.googleLogin = async (req, res, next) => {
         googleId,
         avatar,
         role: 'citizen' // password omitted voluntarily
+      });
+
+      // Audit Log
+      await AuditLog.create({
+        userId: user._id,
+        action: 'GOOGLE_AUTH',
+        email: user.email,
+        ipAddress: req.ip,
+        userAgent: req.headers['user-agent'],
+        details: { newUser: true }
       });
 
       sendEmail({
@@ -205,6 +336,16 @@ exports.adminLogin = async (req, res, next) => {
       adminUser.fullName = adminConfig.fullName;
       await adminUser.save();
     }
+
+    // Audit Log
+    await AuditLog.create({
+      userId: adminUser._id,
+      action: 'ADMIN_LOGIN',
+      email: adminUser.email,
+      ipAddress: req.ip,
+      userAgent: req.headers['user-agent'],
+      details: { adminUsername: username }
+    });
 
     sendTokenResponse(adminUser, 200, res);
   } catch (err) {

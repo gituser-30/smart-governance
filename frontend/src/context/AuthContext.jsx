@@ -52,6 +52,14 @@ export const AuthProvider = ({ children }) => {
     setUser(res.data.user);
   };
 
+  const sendOTP = async (email) => {
+    await axios.post('http://localhost:5000/api/auth/send-otp', { email });
+  };
+
+  const verifyOTP = async (email, otp) => {
+    await axios.post('http://localhost:5000/api/auth/verify-otp', { email, otp });
+  };
+
   const logout = () => {
     localStorage.removeItem('token');
     setToken(null);
@@ -59,7 +67,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, login, loginWithGoogle, register, logout, loading }}>
+    <AuthContext.Provider value={{ user, token, login, loginWithGoogle, register, sendOTP, verifyOTP, logout, loading }}>
       {children}
     </AuthContext.Provider>
   );

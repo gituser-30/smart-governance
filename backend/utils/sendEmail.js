@@ -63,11 +63,12 @@ const transporter = nodemailer.createTransport({
  * @param {string} options.subject   - Email subject
  * @param {string} options.html      - HTML body
  */
-const sendEmail = async ({ to, subject, html }) => {
+const sendEmail = async ({ to, email, subject, html }) => {
+  const recipient = to || email;
   try {
     const mailOptions = {
       from: `"CertifyGov Portal" <${process.env.SMTP_USER}>`,
-      to,
+      to: recipient,
       subject,
       html,
     };

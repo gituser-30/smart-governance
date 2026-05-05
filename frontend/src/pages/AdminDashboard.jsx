@@ -3,7 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, CheckCircle, XCircle, Eye, ClipboardList, User as UserIcon, Loader2, MessageSquare, Reply, Shield, FileText } from 'lucide-react';
+import { Search, CheckCircle, XCircle, Eye, ClipboardList, User as UserIcon, Loader2, MessageSquare, Reply, Shield, FileText, Activity } from 'lucide-react';
 import Navbar from '../components/Navbar';
 
 export default function AdminDashboard() {
@@ -127,6 +127,13 @@ export default function AdminDashboard() {
                      <button onClick={() => setViewMode('applications')} className={`px-4 py-2 rounded-lg text-sm font-bold transition-colors ${viewMode === 'applications' ? 'bg-navy-700 text-saffron-500 border border-navy-600/30' : 'text-navy-400 hover:text-navy-300'}`}>Applications</button>
                      <button onClick={() => setViewMode('grievances')} className={`px-4 py-2 rounded-lg text-sm font-bold transition-colors ${viewMode === 'grievances' ? 'bg-navy-700 text-saffron-500 border border-navy-600/30' : 'text-navy-400 hover:text-navy-300'}`}>Grievances</button>
                   </div>
+                  <button 
+                    onClick={() => navigate('/admin/audit-logs')}
+                    className="bg-navy-800/70 p-2.5 rounded-xl border border-navy-700/30 text-navy-400 hover:text-saffron-500 transition-all flex items-center gap-2 text-sm font-bold"
+                  >
+                    <Activity className="w-4 h-4" />
+                    <span className="hidden sm:inline">Audit Logs</span>
+                  </button>
                </div>
             </div>
 
