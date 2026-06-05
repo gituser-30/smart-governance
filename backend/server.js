@@ -22,11 +22,13 @@ app.use(express.urlencoded({ limit: '50mb', extended: true }));
 const applicationRoutes = require('./routes/application.routes');
 const grievanceRoutes = require('./routes/grievance.routes');
 const auditRoutes = require('./routes/audit.routes');
+const documentRoutes = require('./routes/document.routes');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/applications', applicationRoutes);
 app.use('/api/grievances', grievanceRoutes);
 app.use('/api/audit', auditRoutes);
+app.use('/api/documents', documentRoutes);
 
 // Health Check
 app.get('/health', (req, res) => {

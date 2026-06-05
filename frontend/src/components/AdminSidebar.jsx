@@ -1,24 +1,16 @@
 import React from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { useTranslation } from 'react-i18next';
 
-export default function Sidebar() {
-  const { user } = useAuth();
+export default function AdminSidebar() {
+  const { user, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const { t } = useTranslation();
 
   const mainNav = [
-    { label: t('sidebar_dashboard'),       icon: '⊞', path: '/dashboard' },
-    { label: t('sidebar_myCertificates'), icon: '📄', path: '/dashboard/certificates' },
-    { label: t('sidebar_myGrievances'),   icon: '💬', path: '/dashboard/grievances' },
-    { label: t('sidebar_myDocuments', 'My Documents'),    icon: '📁', path: '/dashboard/documents' },
-  ];
-
-  const bottomNav = [
-    { label: t('sidebar_settings'),      icon: '⚙', path: '/dashboard/settings' },
-    { label: t('sidebar_helpSupport'), icon: '❓', path: '/dashboard/support' },
+    { label: 'Applications',  icon: '📄', path: '/admin' },
+    { label: 'Grievances',    icon: '💬', path: '/admin/grievances' },
+    { label: 'Audit Logs',    icon: '📊', path: '/admin/audit-logs' },
   ];
 
   return (
@@ -31,12 +23,12 @@ export default function Sidebar() {
       {/* Logo mark */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '0 6px', marginBottom: 22 }}>
         <div style={{
-          width: 36, height: 36, background: 'linear-gradient(135deg,#F97316,#ea580c)',
+          width: 36, height: 36, background: 'linear-gradient(135deg,#22C55E,#16a34a)',
           borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 17,
-        }}>✦</div>
+        }}>🏛️</div>
         <div>
           <div style={{ fontSize: 14, fontWeight: 800, color: '#fff', lineHeight: 1.1 }}>GovAI</div>
-          <div style={{ fontSize: 10, color: '#4B5B7A', fontWeight: 500 }}>Digital India</div>
+          <div style={{ fontSize: 10, color: '#4B5B7A', fontWeight: 500 }}>Admin Portal</div>
         </div>
       </div>
 
@@ -57,19 +49,18 @@ export default function Sidebar() {
 
       <div style={{ flex: 1 }} />
 
-      {bottomNav.map((item) => {
-        const isActive = location.pathname === item.path;
-        return (
-          <button
-            key={item.label}
-            onClick={() => navigate(item.path)}
-            className={`sidebar-item${isActive ? ' active' : ''}`}
-          >
-            <span style={{ fontSize: 15, flexShrink: 0 }}>{item.icon}</span>
-            {item.label}
-          </button>
-        );
-      })}
+      {/* Logout button */}
+      <button
+        onClick={() => {
+            logout();
+            navigate('/admin-login');
+        }}
+        className="sidebar-item"
+        style={{ color: '#EF4444' }}
+      >
+        <span style={{ fontSize: 15, flexShrink: 0 }}>🚪</span>
+        Logout
+      </button>
 
       {/* User chip */}
       <div style={{
@@ -79,17 +70,17 @@ export default function Sidebar() {
       }}>
         <div style={{
           width: 32, height: 32, borderRadius: '50%',
-          background: 'linear-gradient(135deg,#F97316,#ea580c)',
+          background: 'linear-gradient(135deg,#22C55E,#16a34a)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           fontSize: 13, fontWeight: 800, flexShrink: 0, color: '#fff',
         }}>
-          {user?.fullName?.[0]?.toUpperCase() || 'U'}
+          {user?.fullName?.[0]?.toUpperCase() || 'A'}
         </div>
         <div style={{ overflow: 'hidden' }}>
           <div style={{ fontSize: 12, fontWeight: 700, color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-            {user?.fullName || 'Citizen'}
+            {user?.fullName || 'Tahsildar Officer'}
           </div>
-          <div style={{ fontSize: 10, color: '#4B5B7A', fontWeight: 500 }}>{t('sidebar_citizenPortal')}</div>
+          <div style={{ fontSize: 10, color: '#4B5B7A', fontWeight: 500 }}>{user?.area || 'All Areas'}</div>
         </div>
       </div>
     </aside>

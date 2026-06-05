@@ -6,13 +6,15 @@ import Auth from './pages/Auth';
 import Dashboard from './pages/Dashboard';
 import ApplyForm from './pages/ApplyForm';
 
-import AdminDashboard from './pages/AdminDashboard';
-import AdminAuth from './pages/AdminAuth';
+import AdminDashboard from './pages/admin/AdminDashboard';
+import AdminGrievances from './pages/admin/AdminGrievances';
+import AdminAuth from './pages/admin/AdminAuth';
 import CertificateView from './pages/CertificateView';
-import AuditLogs from './pages/AuditLogs';
+import AuditLogs from './pages/admin/AuditLogs';
 
 import Certificates from './pages/Certificates';
 import Grievances from './pages/Grievances';
+import MyDocuments from './pages/MyDocuments';
 import TrackStatus from './pages/TrackStatus';
 import Settings from './pages/Settings';
 import HelpSupport from './pages/HelpSupport';
@@ -36,13 +38,16 @@ export default function App() {
             <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
             <Route path="/dashboard/certificates" element={<ProtectedRoute><Certificates /></ProtectedRoute>} />
             <Route path="/dashboard/grievances" element={<ProtectedRoute><Grievances /></ProtectedRoute>} />
+            <Route path="/dashboard/documents" element={<ProtectedRoute><MyDocuments /></ProtectedRoute>} />
             <Route path="/dashboard/track" element={<ProtectedRoute><TrackStatus /></ProtectedRoute>} />
             <Route path="/dashboard/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
             <Route path="/dashboard/support" element={<ProtectedRoute><HelpSupport /></ProtectedRoute>} />
             <Route path="/apply" element={<ProtectedRoute><ApplyForm /></ProtectedRoute>} />
             <Route path="/certificate/:trackingId" element={<ProtectedRoute><CertificateView /></ProtectedRoute>} />
             <Route path="/admin" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
+            <Route path="/admin/grievances" element={<ProtectedRoute><AdminGrievances /></ProtectedRoute>} />
             <Route path="/admin/audit-logs" element={<ProtectedRoute><AuditLogs /></ProtectedRoute>} />
+            <Route path="*" element={<Navigate to="/dashboard" replace />} />
           </Routes>
         </Router>
       </AuthProvider>

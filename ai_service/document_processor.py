@@ -9,7 +9,7 @@ async def get_groq_client():
         raise ValueError("GROQ_API_KEY environment variable is not set. Please set it in your .env or run your terminal with GROQ_API_KEY='your_key'")
     return AsyncGroq(api_key=api_key)
 
-async def process_document_with_ai(document_type: str, extracted_raw_text: str) -> dict:
+async def process_document_with_ai(document_type: str, extracted_raw_text: str, document_url: str = None) -> dict:
     """
     Takes pre-extracted robust OCR text from the backend and performs
     advanced semantic verification against the expected document template.
@@ -20,7 +20,7 @@ async def process_document_with_ai(document_type: str, extracted_raw_text: str) 
     try:
         client = await get_groq_client()
         
-        if not extracted_raw_text or len(extracted_raw_text) < 5 or "Unreadable" in extracted_raw_text:
+        if not document_url and (not extracted_raw_text or len(extracted_raw_text) < 5 or "Unreadable" in extracted_raw_text):
              return {
                 "isValid": False,
                 "rejectionReason": "Uploaded document appears unreadable or blank. Ensure the image is clear and contains text.",
@@ -48,12 +48,12 @@ async def process_document_with_ai(document_type: str, extracted_raw_text: str) 
         
         3. ORIGINALITY: Check for "Signature Valid", "Digitally Signed", "QR Code", or official seal markers.
         
-        4. DATA EXTRACTION:
-           - fullName: Extract name (e.g., 'Sudesh Tukaram Mandhare'). Be aware of 'Shri/Smt' prefixes.
-           - idNumber: Look for certificate numbers (e.g., '४१८०६०२५७४१' or '4180...').
+        4. DATA EXTRACTION (DO NOT INVENT DATA. ONLY EXTRACT WHAT IS PRESENT):
+           - fullName: Extract exact legal name.
+           - idNumber: Extract exact certificate or ID numbers.
            - dob: Extract if present.
-           - income: For Income certificates, extract the highest or most recent annual income value (e.g., 6,64,932).
-           - address: Extract village/city (e.g., 'Ambole', 'Sudhagad').
+           - income: For Income certificates, extract the highest or most recent annual income value.
+           - address: Extract village/city exactly as written.
         
         Return RAW JSON exclusively. Absolutely no markdown wrappers.
         JSON format:
@@ -71,22 +71,65 @@ async def process_document_with_ai(document_type: str, extracted_raw_text: str) 
         }}
         """
         
-        completion = await client.chat.completions.create(
-            model="llama-3.3-70b-versatile",
-            messages=[
-                {
-                    "role": "user",
-                    "content": prompt
-                }
-            ],
-            temperature=0.1,
-            response_format={"type": "json_object"}
-        )
+        import re
         
-        raw_json = completion.choices[0].message.content
-        print("Groq Semantic Response:", raw_json)
+        messages = []
+        if document_url and document_url.startswith("http"):
+            messages.append({
+                "role": "user",
+                "content": [
+                    {"type": "text", "text": prompt + "\n\nCRITICAL: Analyze the attached image directly. Ignore OCR errors."},
+                    {"type": "image_url", "image_url": {"url": document_url}}
+                ]
+            })
+            model_name = "meta-llama/llama-4-scout-17b-16e-instruct"
+            response_format = None
+        else:
+            messages.append({
+                "role": "user",
+                "content": prompt
+            })
+            model_name = "llama-3.1-8b-instant"
+            response_format = {"type": "json_object"}
+            
+        completion_args = {
+            "model": model_name,
+            "messages": messages,
+            "temperature": 0.1
+        }
+        if response_format:
+            completion_args["response_format"] = response_format
+
+        try:
+            completion = await client.chat.completions.create(**completion_args)
+        except Exception as api_err:
+            print(f"Vision API Error ({model_name}): {str(api_err)}")
+            print("Falling back to text-only model llama-3.1-8b-instant...")
+            
+            # Fallback to Text Model
+            if "Unreadable" in extracted_raw_text:
+                 return {
+                    "isValid": False,
+                    "rejectionReason": "Uploaded document appears unreadable. Please ensure the image is clear.",
+                    "extractedData": {}
+                 }
+                 
+            completion = await client.chat.completions.create(
+                model="llama-3.1-8b-instant",
+                messages=[{"role": "user", "content": prompt}],
+                temperature=0.1,
+                response_format={"type": "json_object"}
+            )
+            model_name = "llama-3.1-8b-instant (Fallback)"
+        raw_text = completion.choices[0].message.content
+        print(f"Groq Semantic Response ({model_name}):", raw_text)
         
-        return json.loads(raw_json)
+        # Regex to extract JSON if it was wrapped in markdown by Vision model
+        json_match = re.search(r'\{.*\}', raw_text.replace('\n', ''), re.DOTALL)
+        if json_match:
+            raw_text = json_match.group(0)
+            
+        return json.loads(raw_text)
         
     except Exception as e:
         print(f"AI Processing Exception: {str(e)}")

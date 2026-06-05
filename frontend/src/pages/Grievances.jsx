@@ -3,9 +3,11 @@ import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
 import { motion } from 'framer-motion';
 import DashboardLayout from '../components/DashboardLayout';
+import { useTranslation } from 'react-i18next';
 
 export default function Grievances() {
   const { token } = useAuth();
+  const { t } = useTranslation();
   const [grievances, setGrievances] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -30,8 +32,8 @@ export default function Grievances() {
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 28 }}>
           <div>
-            <h1 style={{ fontSize: 28, fontWeight: 800, marginBottom: 6 }}>My Grievances</h1>
-            <p style={{ color: '#6B7FAA', fontSize: 14 }}>Track your filed complaints and issues</p>
+            <h1 style={{ fontSize: 28, fontWeight: 800, marginBottom: 6 }}>{t('sidebar_myGrievances', 'My Grievances')}</h1>
+            <p style={{ color: '#6B7FAA', fontSize: 14 }}>{t('griev_desc', 'Track your filed complaints and issues')}</p>
           </div>
         </div>
         
@@ -41,7 +43,7 @@ export default function Grievances() {
           ) : grievances.length === 0 ? (
             <div style={{ gridColumn: '1 / -1', padding: '60px 22px', textAlign: 'center', background: '#0D1626', borderRadius: 16, border: '1px solid rgba(255,255,255,0.05)' }}>
                <div style={{ fontSize: 44, marginBottom: 15 }}>💬</div>
-               <div style={{ fontSize: 16, fontWeight: 700, color: '#6B7FAA' }}>No grievances filed</div>
+               <div style={{ fontSize: 16, fontWeight: 700, color: '#6B7FAA' }}>{t('griev_noFiled', 'No grievances filed')}</div>
             </div>
           ) : (
             grievances.map((g, idx) => (
@@ -64,7 +66,7 @@ export default function Grievances() {
                     padding: '4px 10px', borderRadius: 20, fontSize: 10, fontWeight: 800, textTransform: 'uppercase',
                     background: 'rgba(249,115,22,0.12)', color: '#F97316'
                   }}>
-                    {g.status || 'Pending'}
+                    {g.status || t('dash_pending', 'Pending')}
                   </span>
                 </div>
               </motion.div>

@@ -4,6 +4,7 @@ const DocumentSchema = new mongoose.Schema({
   type: { type: String, required: true }, // e.g. Aadhar, IncomeProof
   url: { type: String, required: true },
   status: { type: String, enum: ['pending', 'verified', 'rejected'], default: 'pending' },
+  aiRemark: { type: String }, // Stores AI reason for rejection if mismatched
   extractedData: { type: mongoose.Schema.Types.Mixed, default: {} }
 });
 

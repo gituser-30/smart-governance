@@ -13,7 +13,7 @@ import {
   Globe,
   Monitor
 } from 'lucide-react';
-import Navbar from '../components/Navbar';
+import AdminLayout from '../../components/AdminLayout';
 
 export default function AuditLogs() {
   const [logs, setLogs] = useState([]);
@@ -62,10 +62,8 @@ export default function AuditLogs() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Navbar />
-      
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-12">
+    <AdminLayout>
+      <div className="bg-gray-50 rounded-2xl p-6">
         {/* Header */}
         <div className="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
@@ -217,7 +215,7 @@ export default function AuditLogs() {
             </div>
           </div>
         </div>
-      </main>
-    </div>
+      </div>
+    </AdminLayout>
   );
 }

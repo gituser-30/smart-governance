@@ -3,6 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useTranslation } from 'react-i18next';
 import Navbar from '../components/Navbar';
 import DashboardLayout from '../components/DashboardLayout';
 import {
@@ -193,6 +194,7 @@ function ApplyModal({ onClose }) {
 export default function Dashboard() {
   const { user, token } = useAuth();
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   const [applications, setApplications] = useState([]);
   const [grievances, setGrievances] = useState([]);
@@ -259,45 +261,48 @@ export default function Dashboard() {
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 40, flexWrap: 'wrap', gap: 20 }}>
             <motion.div variants={itemVariants}>
               <h1 style={{ fontSize: 32, fontWeight: 800, letterSpacing: '-0.04em', margin: '0 0 8px' }}>
-                Dashboard
+                {t('sidebar_dashboard')}
               </h1>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                 <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#22C55E', boxShadow: '0 0 10px #22C55E' }} className="pulse" />
                 <span style={{ fontSize: 14, color: '#4B5B7A', fontWeight: 600 }}>
-                  Active Session: <span style={{ color: '#fff' }}>{user?.fullName}</span>
+                  {t('dash_activeSession')} <span style={{ color: '#fff' }}>{user?.fullName}</span>
                 </span>
               </div>
             </motion.div>
 
             <motion.div variants={itemVariants} style={{ display: 'flex', gap: 12 }}>
               <button className="btn-secondary" onClick={() => setShGrievanceModal(true)} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '12px 20px' }}>
-                <AlertCircle size={16} /> Lodge Complaint
+                <AlertCircle size={16} /> {t('dash_lodgeComplaint')}
               </button>
               <button className="btn-primary" onClick={() => setShowApplyModal(true)} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '12px 24px' }}>
-                <Plus size={18} /> New Application
+                <Plus size={18} /> {t('dash_newApplication')}
               </button>
             </motion.div>
           </div>
 
           {/* ── Stats Grid ── */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 20, marginBottom: 40 }}>
-            <StatCard label="Total Submissions" value={loading ? '—' : stats.total} sub="Total applications filed" icon={<FileText size={24} />} accent="#F97316" />
-            <StatCard label="Approved Documents" value={loading ? '—' : stats.approved} sub="Verified by authorities" icon={<FileCheck size={24} />} accent="#22C55E" />
-            <StatCard label="Awaiting Review" value={loading ? '—' : stats.pending} sub="In validation pipeline" icon={<Clock size={24} />} accent="#3B82F6" />
-            <StatCard label="Active Grievances" value={loading ? '—' : stats.grievances} sub="Open support tickets" icon={<AlertCircle size={24} />} accent="#A855F7" />
+            <StatCard label={t('dash_totalSubmissions')} value={loading ? '—' : stats.total} sub={t('dash_totalApplicationsFiled')} icon={<FileText size={24} />} accent="#F97316" />
+            <StatCard label={t('dash_approvedDocuments')} value={loading ? '—' : stats.approved} sub={t('dash_verifiedByAuthorities')} icon={<FileCheck size={24} />} accent="#22C55E" />
+            <StatCard label={t('dash_awaitingReview')} value={loading ? '—' : stats.pending} sub={t('dash_inValidationPipeline')} icon={<Clock size={24} />} accent="#3B82F6" />
+            <StatCard label={t('dash_activeGrievances')} value={loading ? '—' : stats.grievances} sub={t('dash_openSupportTickets')} icon={<AlertCircle size={24} />} accent="#A855F7" />
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 320px', gap: 24, alignItems: 'start' }}>
             {/* ── Main Application Tracking ── */}
             <motion.div variants={itemVariants} style={{ background: '#0D1626', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 24, overflow: 'hidden', boxShadow: '0 20px 40px -10px rgba(0,0,0,0.3)' }}>
               <div style={{ padding: '24px 30px', borderBottom: '1px solid rgba(255,255,255,0.05)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <h3 style={{ fontSize: 18, fontWeight: 800, margin: 0 }}>Application Tracking</h3>
+                <h3 style={{ fontSize: 18, fontWeight: 800, margin: 0 }}>{t('dash_applicationTracking')}</h3>
                 <div style={{ display: 'flex', gap: 6 }}>
-                  {FILTERS.map(f => (
-                    <button key={f} className={`filter-pill ${activeFilter === f ? 'active' : ''}`} onClick={() => setActiveFilter(f)}>
-                      {f}
-                    </button>
-                  ))}
+                  {FILTERS.map(f => {
+                    const fKeys = { 'All': 'dash_all', 'Approved': 'dash_approved', 'In Progress': 'dash_inProgress', 'Pending': 'dash_pending', 'Rejected': 'dash_rejected' };
+                    return (
+                      <button key={f} className={`filter-pill ${activeFilter === f ? 'active' : ''}`} onClick={() => setActiveFilter(f)}>
+                        {t(fKeys[f]) || f}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
 
@@ -309,7 +314,7 @@ export default function Dashboard() {
                 ) : filtered.length === 0 ? (
                   <div style={{ padding: '60px 0', textAlign: 'center' }}>
                     <div style={{ fontSize: 48, marginBottom: 16, opacity: 0.3 }}>📂</div>
-                    <p style={{ color: '#4B5B7A', fontWeight: 600 }}>No applications found for this status.</p>
+                    <p style={{ color: '#4B5B7A', fontWeight: 600 }}>{t('dash_noApplications')}</p>
                   </div>
                 ) : (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -337,10 +342,10 @@ export default function Dashboard() {
                         <div style={{ textAlign: 'right' }}>
                           {app.status === 'Approved' ? (
                             <button onClick={() => navigate(`/certificate/${app.trackingId}`)} style={{ background: 'none', border: 'none', color: '#22C55E', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, marginLeft: 'auto', fontWeight: 800, fontSize: 12 }}>
-                              View <ArrowRight size={14} />
+                              {t('dash_view')} <ArrowRight size={14} />
                             </button>
                           ) : (
-                            <div style={{ fontSize: 11, color: '#4B5B7A', fontWeight: 700 }}>In Review</div>
+                            <div style={{ fontSize: 11, color: '#4B5B7A', fontWeight: 700 }}>{t('dash_inReview')}</div>
                           )}
                         </div>
                       </motion.div>
@@ -354,10 +359,10 @@ export default function Dashboard() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
               {/* Quick Actions */}
               <motion.div variants={itemVariants} style={{ background: '#0D1626', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 24, padding: 24 }}>
-                <h4 style={{ fontSize: 14, fontWeight: 800, color: '#fff', marginBottom: 20, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Recent Grievances</h4>
+                <h4 style={{ fontSize: 14, fontWeight: 800, color: '#fff', marginBottom: 20, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{t('dash_recentGrievances')}</h4>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                   {grievances.length === 0 ? (
-                    <p style={{ fontSize: 12, color: '#4B5B7A', margin: 0 }}>No active grievances.</p>
+                    <p style={{ fontSize: 12, color: '#4B5B7A', margin: 0 }}>{t('dash_noActiveGrievances')}</p>
                   ) : (
                     grievances.slice(0, 3).map(g => (
                       <div key={g._id} style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.04)', borderRadius: 12, padding: 12 }}>
@@ -366,8 +371,8 @@ export default function Dashboard() {
                       </div>
                     ))
                   )}
-                  <button onClick={() => navigate('/grievances')} style={{ background: 'none', border: 'none', color: '#3B82F6', fontSize: 12, fontWeight: 700, cursor: 'pointer', padding: '10px 0 0', textAlign: 'left', display: 'flex', alignItems: 'center', gap: 6 }}>
-                    View all tickets <ChevronRight size={14} />
+                  <button onClick={() => navigate('/dashboard/grievances')} style={{ background: 'none', border: 'none', color: '#3B82F6', fontSize: 12, fontWeight: 700, cursor: 'pointer', padding: '10px 0 0', textAlign: 'left', display: 'flex', alignItems: 'center', gap: 6 }}>
+                    {t('dash_viewAllTickets')} <ChevronRight size={14} />
                   </button>
                 </div>
               </motion.div>
@@ -375,10 +380,10 @@ export default function Dashboard() {
               {/* Resources */}
               <motion.div variants={itemVariants} style={{ background: 'linear-gradient(135deg, #F9731620 0%, #3B82F620 100%)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 24, padding: 24, position: 'relative', overflow: 'hidden' }}>
                 <div style={{ position: 'relative', zIndex: 2 }}>
-                  <h4 style={{ fontSize: 14, fontWeight: 800, color: '#fff', marginBottom: 12 }}>Need Help?</h4>
-                  <p style={{ fontSize: 12, color: '#9DB4D8', lineHeight: 1.6, marginBottom: 20 }}>Our AI-powered assistant can help you with application queries.</p>
-                  <button onClick={() => navigate('/help')} style={{ width: '100%', background: '#fff', color: '#000', border: 'none', borderRadius: 12, padding: '12px', fontWeight: 800, fontSize: 12, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
-                    Help Center <ExternalLink size={14} />
+                  <h4 style={{ fontSize: 14, fontWeight: 800, color: '#fff', marginBottom: 12 }}>{t('dash_needHelp')}</h4>
+                  <p style={{ fontSize: 12, color: '#9DB4D8', lineHeight: 1.6, marginBottom: 20 }}>{t('dash_aiAssistantDesc')}</p>
+                  <button onClick={() => navigate('/dashboard/support')} style={{ width: '100%', background: '#fff', color: '#000', border: 'none', borderRadius: 12, padding: '12px', fontWeight: 800, fontSize: 12, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+                    {t('dash_helpCenter')} <ExternalLink size={14} />
                   </button>
                 </div>
               </motion.div>
@@ -415,6 +420,16 @@ export default function Dashboard() {
                   <select className="govai-input" value={gForm.department} onChange={e => setGForm({ ...gForm, department: e.target.value })}>
                     <option value="Revenue">Revenue Authority</option>
                     <option value="General">General Administration</option>
+                  </select>
+                  <select required className="govai-input" value={gForm.area} onChange={e => setGForm({ ...gForm, area: e.target.value })}>
+                    <option value="" disabled>Select Area/Jurisdiction</option>
+                    <option value="Ambole Pali">Ambole Pali</option>
+                    <option value="Panvel">Panvel</option>
+                    <option value="North Zone">North Zone</option>
+                    <option value="South Zone">South Zone</option>
+                    <option value="East Zone">East Zone</option>
+                    <option value="West Zone">West Zone</option>
+                    <option value="Central Zone">Central Zone</option>
                   </select>
                   <textarea required className="govai-input" placeholder="Detailed description..." rows={4} value={gForm.description} onChange={e => setGForm({ ...gForm, description: e.target.value })} style={{ resize: 'none' }} />
                   <button type="submit" disabled={gSubmitting} className="btn-primary" style={{ width: '100%', justifyContent: 'center', padding: 14 }}>

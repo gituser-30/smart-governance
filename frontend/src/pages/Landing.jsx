@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { User, FileText, Activity, ArrowRight, ShieldCheck } from "lucide-react";
 import { motion } from "framer-motion";
 import Navbar from "../components/Navbar";
+import { useTranslation } from "react-i18next";
 const cn = (...cls) => cls.filter(Boolean).join(" ");
 /* ── Global styles injected once ── */
 const GLOBAL_CSS = `
@@ -288,6 +289,7 @@ function Reveal({ children, delay = 0, className = "" }) {
 }
 
 export default function Landing() {
+  const { t } = useTranslation();
   useEffect(() => {
     const el = document.createElement("style");
     el.textContent = GLOBAL_CSS;
@@ -507,6 +509,7 @@ export default function Landing() {
       }
 
       function resize() {
+        if (!canvas || !canvas.parentElement) return;
         const parent = canvas.parentElement;
         W = canvas.width = parent.offsetWidth;
         H = canvas.height = parent.offsetHeight;
@@ -609,7 +612,7 @@ export default function Landing() {
               className="text-[clamp(42px,6vw,72px)] font-extrabold leading-[1.05] tracking-tight mb-6"
               style={{ fontFamily: "'Syne', sans-serif" }}
             >
-              Digital India<br />
+              {t('digitalIndia')}<br />
               <span
                 style={{
                   background: "linear-gradient(90deg,#FF5722,#FFB300,#FF5722)",
@@ -620,13 +623,12 @@ export default function Landing() {
                   animation: "shimmer 4s linear infinite",
                 }}
               >
-                Starts Here.
+                {t('startsHere')}
               </span>
             </h1>
 
             <p className="text-[16px] text-white/55 leading-relaxed max-w-lg mb-8">
-              Get Income, Domicile, EWS & Birth Certificates in minutes —
-              no queues, no Tahsil visits. Powered by cutting-edge AI verification.
+              {t('landingDesc')}
             </p>
 
             {/* Buttons */}
@@ -639,7 +641,7 @@ export default function Landing() {
                     boxShadow: "0 6px 30px rgba(255,87,34,0.45), inset 0 1px 0 rgba(255,255,255,0.2)",
                   }}
                 >
-                  <span>✦ Apply Now</span>
+                  <span>{t('applyNow')}</span>
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
                 </button>
               </Link>
@@ -652,7 +654,7 @@ export default function Landing() {
                     backdropFilter: "blur(12px)",
                   }}
                 >
-                  Track Application
+                  {t('trackApp')}
                 </button>
               </Link>
             </div>
@@ -693,7 +695,7 @@ export default function Landing() {
               <OfficialCard
                 img="https://images.moneycontrol.com/static-mcnews/2022/06/Eknath-Shinde-435x435.jpg"
                 name="Shri Eknath Shinde"
-                role="Chief Minister"
+                role="Deputy Chief Minister"
                 size="sm"
                 style={{ marginBottom: "32px" }}
               />
@@ -715,7 +717,7 @@ export default function Landing() {
               <OfficialCard
                 img="https://yt3.googleusercontent.com/NZdann7v63WTVxM_f0BEAroqJq-sLHeDWtFaRzY2snrOtnOL8XnOgh6Hddt0Osr3oS3tljtj=s900-c-k-c0x00ffffff-no-r"
                 name="Shri Devendra Fadnavis"
-                role="Deputy Chief Minister"
+                role="Chief Minister"
                 size="sm"
                 style={{ marginBottom: "32px" }}
               />

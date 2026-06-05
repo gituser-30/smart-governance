@@ -9,8 +9,9 @@ export default function TrackStatus() {
 
   const handleTrack = (e) => {
     e.preventDefault();
-    if (trackingId.trim()) {
-      navigate(`/certificate/${trackingId.trim()}`);
+    const cleanId = trackingId.trim().replace(/^#/, '');
+    if (cleanId) {
+      navigate(`/certificate/${cleanId}`);
     }
   };
 

@@ -2,11 +2,17 @@ import React from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { motion } from 'framer-motion';
+import { useTranslation } from 'react-i18next';
 
 export default function Navbar() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const { t, i18n } = useTranslation();
+
+  const changeLanguage = (e) => {
+    i18n.changeLanguage(e.target.value);
+  };
 
   const handleLogout = () => {
     logout();
@@ -35,15 +41,27 @@ export default function Navbar() {
             </motion.div>
             <div>
               <h1 className="text-lg font-bold font-serif leading-tight tracking-wide text-white">
-                Government of Maharashtra
+                {t('govName')}
               </h1>
               <p className="text-[10px] font-semibold tracking-[0.2em] uppercase text-saffron-500 hidden sm:block">
-                Smart Governance Portal
+                {t('portalName')}
               </p>
             </div>
           </Link>
 
           <div className="flex items-center space-x-4 z-10">
+            {/* Language Switcher */}
+            <select 
+              className="bg-navy-800 text-white text-xs border border-navy-600 rounded px-2 py-1 outline-none focus:border-saffron-500"
+              onChange={changeLanguage}
+              value={i18n.language || 'en'}
+            >
+              <option value="en">English</option>
+              <option value="hi">हिंदी</option>
+              <option value="mr">मराठी</option>
+              <option value="ta">தமிழ்</option>
+            </select>
+
             {user ? (
               <>
                 <motion.span
@@ -51,10 +69,10 @@ export default function Navbar() {
                   animate={{ opacity: 1 }}
                   className="text-sm font-medium hidden md:block text-navy-300"
                 >
-                  Hello, <span className="font-bold text-white">{user.fullName || user.name}</span>
+                  {t('hello')}, <span className="font-bold text-white">{user.fullName || user.name}</span>
                 </motion.span>
                 <Link to="/dashboard" className="text-sm font-semibold text-navy-400 hover:text-saffron-500 transition-colors hidden sm:block">
-                  Dashboard
+                  {t('dashboard')}
                 </Link>
                 <motion.button
                   whileHover={{ scale: 1.05 }}
@@ -62,13 +80,13 @@ export default function Navbar() {
                   onClick={handleLogout}
                   className="bg-red-500/80 hover:bg-red-600 text-white py-1.5 px-5 rounded-full text-sm font-bold transition shadow-lg shadow-red-500/20"
                 >
-                  Logout
+                  {t('logout')}
                 </motion.button>
               </>
             ) : (
               <>
                 <Link to="/auth" className="font-semibold text-sm text-navy-300 hover:text-saffron-500 transition-colors">
-                  Citizen Login
+                  {t('citizenLogin')}
                 </Link>
                 <Link to="/auth">
                   <motion.div
@@ -76,7 +94,7 @@ export default function Navbar() {
                     whileTap={{ scale: 0.97 }}
                     className="py-1.5 px-5 rounded-full font-bold text-sm bg-saffron-500 text-navy-900 hover:bg-saffron-400 transition-all shadow-lg shadow-saffron-500/20"
                   >
-                    Register
+                    {t('register')}
                   </motion.div>
                 </Link>
               </>

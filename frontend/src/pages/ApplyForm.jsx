@@ -1,10 +1,17 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, CheckCircle, UploadCloud, FileText, Loader2, AlertTriangle } from 'lucide-react';
+import { ArrowLeft, CheckCircle, UploadCloud, FileText, Loader2, AlertTriangle, ShieldCheck } from 'lucide-react';
 import Navbar from '../components/Navbar';
+
+const documentRequirements = {
+  'Income': ['Aadhar Card', 'Income Proof', 'Passport Photo'],
+  'Domicile': ['Aadhar Card', 'Birth Certificate'],
+  'EWS': ['Aadhar Card', 'Income Certificate', 'Passport Photo'],
+  'Birth': ['Hospital Summary', 'Parents Aadhar Card']
+};
 
 export default function ApplyForm() {
   const [searchParams] = useSearchParams();
@@ -12,150 +19,143 @@ export default function ApplyForm() {
   const { token, user } = useAuth();
   const navigate = useNavigate();
 
-  // Wizard state
   const [step, setStep] = useState(1);
-  const [files, setFiles] = useState({});
+  const [vaultDocs, setVaultDocs] = useState([]);
+  const [extractedData, setExtractedData] = useState({});
+  const [loadingVault, setLoadingVault] = useState(true);
+  
+  const [uploadingDoc, setUploadingDoc] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
-  
-  // Phase 2 state
-  const [extractedData, setExtractedData] = useState({});
-  const [uploadedUrls, setUploadedUrls] = useState([]);
-  
-  // Final Form State
-  const [formFields, setFormFields] = useState({
-     fullName: user?.fullName || '',
-     fatherName: '',
-     idNumber: '',
-     address: '',
-     village: '',
-     taluka: '',
-     district: '',
-     pincode: '',
-     dob: '',
-     placeOfBirth: '',
-     motherName: '',
-     gender: '',
-     residencyPeriod: '15',
-     income: '',
-     financialYear: '2024-2025',
-     caste: '',
-     phone: '',
-     purpose: '',
-     area: ''
-  });
-
   const [success, setSuccess] = useState(false);
   const [trackingId, setTrackingId] = useState('');
 
-  const documentRequirements = {
-    'Income': ['Aadhar Card', 'Income Proof', 'Passport Photo'],
-    'Domicile': ['Aadhar Card', 'Birth Certificate'],
-    'EWS': ['Aadhar Card', 'Income Certificate', 'Passport Photo'],
-    'Birth': ['Hospital Summary', 'Parents Aadhar Card']
-  };
-
   const requiredDocs = documentRequirements[certType] || ['Aadhar Card', 'Address Proof'];
 
-  const handleFileChange = (docType, file) => {
-    setFiles((prev) => ({ ...prev, [docType]: file }));
-    setErrorMsg('');
+  const [formFields, setFormFields] = useState({
+     fullName: '', fatherName: '', idNumber: '', address: '', village: '',
+     taluka: '', district: '', pincode: '', dob: '', placeOfBirth: '',
+     motherName: '', gender: '', residencyPeriod: '15', income: '',
+     financialYear: '2024-2025', caste: '', phone: '', purpose: '', area: ''
+  });
+
+  useEffect(() => {
+    fetchVault();
+  }, [token]);
+
+  const fetchVault = async () => {
+    setLoadingVault(true);
+    try {
+      const res = await axios.get('http://localhost:5000/api/documents/me', { headers: { Authorization: `Bearer ${token}` } });
+      setVaultDocs(res.data.data.documents || []);
+      
+      const vaultData = res.data.data.extractedData || {};
+      setExtractedData(vaultData);
+      
+      // Auto-fill form fields with vault data
+      setFormFields(prev => ({
+        ...prev,
+        fullName: vaultData.fullName || user?.fullName || prev.fullName,
+        idNumber: vaultData.idNumber || prev.idNumber,
+        address: vaultData.address || prev.address,
+        dob: vaultData.dob || prev.dob,
+        income: vaultData.income || prev.income,
+        gender: vaultData.gender || prev.gender,
+        fatherName: vaultData.fatherName || prev.fatherName,
+        motherName: vaultData.motherName || prev.motherName,
+        placeOfBirth: vaultData.placeOfBirth || prev.placeOfBirth,
+        village: vaultData.village || prev.village,
+        taluka: vaultData.taluka || prev.taluka,
+        district: vaultData.district || prev.district,
+        pincode: vaultData.pincode || prev.pincode
+      }));
+    } catch (err) {
+      console.error("Failed to load vault");
+    } finally {
+      setLoadingVault(false);
+    }
   };
+
+  const missingDocs = requiredDocs.filter(doc => {
+    const found = vaultDocs.find(v => v.docType === doc && v.status === 'verified');
+    return !found;
+  });
 
   const handleFieldChange = (e) => {
     setFormFields({ ...formFields, [e.target.name]: e.target.value });
   };
 
-  // --- Phase 1: AI Analysis ---
-  const handleAnalyze = async (e) => {
-    e.preventDefault();
+  const handleUploadMissing = async (docType, file) => {
+    if (!file) return;
+    setUploadingDoc(docType);
     setErrorMsg('');
 
-    for (const doc of requiredDocs) {
-      if (!files[doc]) {
-        setErrorMsg(`Please upload required document: ${doc}`);
-        return;
-      }
-    }
-
-    setSubmitting(true);
     const formData = new FormData();
-    formData.append('certificateType', certType);
-
-    Object.keys(files).forEach((docType) => {
-      formData.append('documents', files[docType]);
-      formData.append('documentTypes', docType);
-    });
+    formData.append('document', file);
+    formData.append('docType', docType);
 
     try {
-      const res = await axios.post('http://localhost:5000/api/applications/analyze', formData, {
-        headers: { 'Authorization': `Bearer ${token}` }
+      const res = await axios.post('http://localhost:5000/api/documents/upload', formData, {
+        headers: { Authorization: `Bearer ${token}` }
       });
-      
-      const resData = res.data;
-      
-      if (!resData.success) {
-         setErrorMsg(`AI Validation Failed for ${resData.rejectedDocument}: ${resData.reason}`);
+      if (!res.data.success) {
+         setErrorMsg(`Upload failed for ${docType}: ${res.data.message}`);
       } else {
-         const extracted = resData.data.extractedFields || {};
-         setExtractedData(extracted);
-         setUploadedUrls(resData.data.documents);
-         
-         setFormFields((prev) => ({
-           ...prev,
-           fullName: extracted.fullName || prev.fullName,
-           idNumber: extracted.idNumber || prev.idNumber,
-           address: extracted.address || prev.address,
-           dob: extracted.dob || prev.dob,
-           income: extracted.income || prev.income,
-           gender: extracted.gender || prev.gender,
-           fatherName: extracted.fatherName || prev.fatherName,
-           motherName: extracted.motherName || prev.motherName,
-           placeOfBirth: extracted.placeOfBirth || prev.placeOfBirth,
-           village: extracted.village || prev.village,
-           taluka: extracted.taluka || prev.taluka,
-           district: extracted.district || prev.district,
-           pincode: extracted.pincode || prev.pincode
-         }));
-         
-         setStep(2);
+         fetchVault(); // Refresh vault to update missingDocs
       }
     } catch (err) {
-      setErrorMsg(err.response?.data?.message || 'Error communicating with AI Service. Is backend running?');
+      setErrorMsg(err.response?.data?.message || 'Error communicating with AI verification service.');
     } finally {
-      setSubmitting(false);
+      setUploadingDoc(null);
     }
   };
 
-  // --- Phase 2: Final Submission ---
+  const handleProceedToStep2 = () => {
+    if (missingDocs.length > 0) {
+      setErrorMsg(`Please upload all missing documents first.`);
+      return;
+    }
+    setErrorMsg('');
+    setStep(2);
+  };
+
   const handleFinalSubmit = async (e) => {
     e.preventDefault();
     setSubmitting(true);
+    
+    // Map required vault docs to application document format
+    const applicationDocs = requiredDocs.map(docType => {
+      const vDoc = vaultDocs.find(d => d.docType === docType);
+      return {
+        type: vDoc.docType,
+        url: vDoc.url,
+        status: vDoc.status,
+        aiRemark: vDoc.aiRemark,
+        extractedData: extractedData
+      };
+    });
+
     try {
        const res = await axios.post('http://localhost:5000/api/applications/final-submit', {
          certificateType: certType,
-         documents: uploadedUrls,
+         documents: applicationDocs,
          formFields: formFields
        }, {
-         headers: { 'Authorization': `Bearer ${token}` }
+         headers: { Authorization: `Bearer ${token}` }
        });
        
        setTrackingId(res.data.data.trackingId);
        setSuccess(true);
        setTimeout(() => navigate('/dashboard'), 4000);
     } catch (err) {
-       setErrorMsg('Error performing final submission.');
+       setErrorMsg(err.response?.data?.message || 'Error performing final submission.');
        setSubmitting(false);
     }
   };
 
-
   if (success) {
     return (
       <div className="min-h-screen bg-navy-900 flex flex-col items-center justify-center p-6 relative overflow-hidden">
-        <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute top-1/4 right-1/4 w-[400px] h-[400px] bg-gov-green/10 rounded-full blur-[100px]"></div>
-        </div>
         <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="glass-card rounded-2xl p-12 max-w-lg text-center relative z-10">
           <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: 0.2, type: 'spring' }} className="inline-block p-5 rounded-full bg-gov-green/15 text-gov-green mb-6 border border-gov-green/20">
             <CheckCircle className="w-14 h-14" />
@@ -175,13 +175,9 @@ export default function ApplyForm() {
   return (
     <div className="min-h-screen flex flex-col bg-navy-900 relative overflow-hidden">
       <Navbar />
-      <div className="absolute -top-32 -left-32 w-[500px] h-[500px] rounded-full bg-navy-700/15 blur-[120px] pointer-events-none"></div>
-      <div className="absolute bottom-0 right-0 w-[400px] h-[400px] rounded-full bg-saffron-500/5 blur-[100px] pointer-events-none"></div>
-
       <main className="flex-grow py-24 px-4 sm:px-6 relative z-10">
         <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
+          initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
           className={`max-w-${step === 1 ? '3xl' : '4xl'} mx-auto glass-card rounded-2xl p-8 md:p-10 transition-all duration-500 border-navy-600/20`}
         >
           {/* Progress Steps */}
@@ -194,7 +190,7 @@ export default function ApplyForm() {
           </div>
 
           <button onClick={() => step === 2 ? setStep(1) : navigate('/dashboard')} className="group text-navy-400 hover:text-saffron-500 text-sm font-semibold mb-8 flex items-center gap-2 transition-colors bg-navy-800/50 px-4 py-2 rounded-full border border-navy-600/20 w-fit">
-            <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" /> {step === 2 ? 'Back to Uploads' : 'Back to Dashboard'}
+            <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" /> {step === 2 ? 'Back to Vault Check' : 'Back to Dashboard'}
           </button>
           
           <AnimatePresence mode="wait">
@@ -209,61 +205,68 @@ export default function ApplyForm() {
           {step === 1 && (
             <motion.div key="step1" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }}>
               <div className="mb-10 text-center">
-                <span className="inline-block bg-navy-800 text-saffron-500 px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest border border-navy-600/30 mb-3">Step 1: AI Verification</span>
-                <h2 className="text-3xl md:text-4xl font-extrabold text-white mb-3">Upload Documents</h2>
+                <span className="inline-block bg-navy-800 text-saffron-500 px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest border border-navy-600/30 mb-3">Step 1: Vault Check</span>
+                <h2 className="text-3xl md:text-4xl font-extrabold text-white mb-3">Document Requirements</h2>
                 <p className="text-navy-300 font-medium max-w-xl mx-auto">
-                   Upload clear images of your documents. Our <span className="font-bold text-saffron-500">AI will analyze validity & extract data</span> instantly.
+                   We check your <span className="font-bold text-gov-green">Digital Vault</span> first. You only need to upload documents that are missing.
                 </p>
               </div>
 
-              <form onSubmit={handleAnalyze} className="space-y-5">
-                <div className="space-y-4">
-                  {requiredDocs.map((docType) => (
-                    <div key={docType} className={`border ${files[docType] ? 'border-gov-green/30 bg-gov-green/5' : 'border-navy-600/30 bg-navy-800/40'} rounded-xl p-5 flex flex-col sm:flex-row justify-between items-start sm:items-center backdrop-blur-sm transition-all group hover:border-navy-500/40`}>
-                      <div className="mb-4 sm:mb-0 flex items-center gap-4">
-                        <div className={`p-2.5 rounded-xl ${files[docType] ? 'bg-gov-green/15 text-gov-green' : 'bg-navy-700/50 text-navy-400 group-hover:text-saffron-500 transition-colors'}`}>
-                           <FileText className="w-5 h-5" />
-                        </div>
-                        <div>
-                          <h3 className="font-bold text-white text-sm">{docType} <span className="text-red-400">*</span></h3>
-                          <p className="text-xs text-navy-400 font-medium">JPG, JPEG, PNG (No PDF)</p>
-                        </div>
-                      </div>
-
-                      <div className="flex-shrink-0 w-full sm:w-auto">
-                        <label className={`cursor-pointer w-full sm:w-auto py-2.5 px-5 rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2 border ${files[docType] ? 'bg-gov-green text-white border-gov-green hover:bg-gov-green/90' : 'bg-navy-800 text-navy-300 border-navy-600/30 hover:border-saffron-500/30 hover:text-saffron-400'}`}>
-                          {files[docType] ? <CheckCircle className="w-4 h-4" /> : <UploadCloud className="w-4 h-4" />}
-                          {files[docType] ? 'Change' : 'Upload'}
-                          <input type="file" className="sr-only" onChange={(e) => handleFileChange(docType, e.target.files[0])} accept=".jpg,.jpeg,.png" />
-                        </label>
-                        {files[docType] && <span className="block mt-2 text-[11px] text-gov-green font-semibold truncate max-w-[200px]">✓ {files[docType].name}</span>}
-                      </div>
+              {loadingVault ? (
+                 <div className="flex justify-center py-12"><Loader2 className="w-8 h-8 animate-spin text-saffron-500" /></div>
+              ) : (
+                <div className="space-y-6">
+                  {missingDocs.length === 0 ? (
+                    <div className="bg-gov-green/10 border border-gov-green/30 rounded-xl p-8 text-center">
+                      <ShieldCheck className="w-16 h-16 text-gov-green mx-auto mb-4" />
+                      <h3 className="text-2xl font-bold text-white mb-2">Vault Complete!</h3>
+                      <p className="text-navy-300 mb-6">All required documents for this certificate are already verified in your vault.</p>
+                      <button onClick={handleProceedToStep2} className="btn-primary w-full max-w-sm mx-auto justify-center text-lg py-4">Proceed to Form</button>
                     </div>
-                  ))}
+                  ) : (
+                    <>
+                      <div className="bg-navy-800/40 border border-navy-600/30 rounded-xl p-6">
+                        <h4 className="text-white font-bold mb-4">Required Documents</h4>
+                        <div className="space-y-4">
+                          {requiredDocs.map(docType => {
+                            const isMissing = missingDocs.includes(docType);
+                            const isUploading = uploadingDoc === docType;
+                            
+                            return (
+                              <div key={docType} className={`flex items-center justify-between p-4 rounded-lg border ${isMissing ? 'border-red-500/30 bg-red-500/5' : 'border-gov-green/30 bg-gov-green/5'}`}>
+                                <div className="flex items-center gap-3">
+                                  <div className={`p-2 rounded-full ${isMissing ? 'bg-red-500/10 text-red-400' : 'bg-gov-green/10 text-gov-green'}`}>
+                                    {isMissing ? <AlertTriangle className="w-4 h-4" /> : <CheckCircle className="w-4 h-4" />}
+                                  </div>
+                                  <div>
+                                    <p className="text-sm font-bold text-white">{docType}</p>
+                                    <p className="text-xs text-navy-400">{isMissing ? 'Missing from vault' : 'Pulled from vault'}</p>
+                                  </div>
+                                </div>
+                                {isMissing && (
+                                  <div className="flex-shrink-0">
+                                    {isUploading ? (
+                                      <span className="flex items-center gap-2 text-xs font-bold text-saffron-500 animate-pulse"><Loader2 className="w-4 h-4 animate-spin" /> Analyzing...</span>
+                                    ) : (
+                                      <label className="cursor-pointer py-2 px-4 rounded-lg font-bold text-xs bg-navy-700 text-white border border-navy-600 hover:border-saffron-500 hover:text-saffron-400 transition-all">
+                                        Upload
+                                        <input type="file" className="sr-only" onChange={(e) => handleUploadMissing(docType, e.target.files[0])} accept=".jpg,.jpeg,.png,.pdf" />
+                                      </label>
+                                    )}
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                      <button disabled={missingDocs.length > 0} onClick={handleProceedToStep2} className={`w-full py-4 text-base font-bold rounded-xl text-white shadow-lg transition-all ${missingDocs.length > 0 ? 'bg-navy-700 cursor-not-allowed opacity-50' : 'bg-gradient-to-r from-saffron-500 to-saffron-600 hover:shadow-saffron-500/25 hover:-translate-y-0.5'}`}>
+                        Continue to Application Form
+                      </button>
+                    </>
+                  )}
                 </div>
-
-                {/* AI Robot during submission */}
-                {submitting && (
-                  <motion.div 
-                    initial={{ opacity: 0, scale: 0.9 }} 
-                    animate={{ opacity: 1, scale: 1 }} 
-                    className="flex flex-col items-center py-6"
-                  >
-                    <motion.img
-                      src="/ai_robot.gif"
-                      alt="AI Processing"
-                      className="w-28 h-28 object-contain mb-3"
-                      animate={{ y: [0, -5, 0] }}
-                      transition={{ duration: 1.5, repeat: Infinity }}
-                    />
-                    <p className="text-saffron-500 font-bold text-sm animate-pulse">AI is analyzing your documents...</p>
-                  </motion.div>
-                )}
-
-                <motion.button whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.98 }} disabled={submitting} type="submit" className={`mt-6 w-full flex justify-center py-4 px-4 text-base font-bold rounded-xl text-white shadow-lg transition-all ${submitting ? 'bg-navy-700 cursor-not-allowed' : 'bg-gradient-to-r from-saffron-500 to-saffron-600 hover:shadow-saffron-500/25 hover:-translate-y-0.5'}`}>
-                  {submitting ? (<span className="flex items-center gap-2"><Loader2 className="w-5 h-5 animate-spin" /> Processing...</span>) : 'Run AI Document Analysis'}
-                </motion.button>
-              </form>
+              )}
             </motion.div>
           )}
 
@@ -271,12 +274,11 @@ export default function ApplyForm() {
              <motion.div key="step2" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
                 <div className="mb-8 border-b border-navy-600/20 pb-6 flex justify-between items-center">
                    <div>
-                     <span className="inline-flex items-center gap-1 bg-gov-green/10 text-gov-green px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest border border-gov-green/20 mb-2"><CheckCircle className="w-3 h-3" /> AI Verified</span>
+                     <span className="inline-flex items-center gap-1 bg-gov-green/10 text-gov-green px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest border border-gov-green/20 mb-2"><CheckCircle className="w-3 h-3" /> Auto-filled</span>
                      <h2 className="text-2xl md:text-3xl font-extrabold text-white">Finalize Application</h2>
                    </div>
                    <div className="bg-navy-800/60 p-3 rounded-xl border border-navy-600/20 hidden md:block">
-                     <p className="text-xs text-navy-400 font-medium">Autofilled from</p>
-                     <p className="text-sm font-bold text-saffron-500">{uploadedUrls.length} verified documents</p>
+                     <p className="text-xs text-navy-400 font-medium">Using verified vault data</p>
                    </div>
                 </div>
 
@@ -284,8 +286,8 @@ export default function ApplyForm() {
                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5 bg-navy-800/30 p-6 rounded-xl border border-navy-600/20">
                       
                       <div className="col-span-1 md:col-span-2">
-                        <h4 className="text-sm font-bold text-white uppercase tracking-wider border-l-3 border-saffron-500 pl-3 mb-1">Extracted Information</h4>
-                        <p className="text-xs text-navy-400 mb-4 font-medium">Please verify the AI-extracted details. Correct any mistakes manually.</p>
+                        <h4 className="text-sm font-bold text-white uppercase tracking-wider border-l-3 border-saffron-500 pl-3 mb-1">Applicant Details</h4>
+                        <p className="text-xs text-navy-400 mb-4 font-medium">Verify your pre-filled details. Correct any mistakes manually.</p>
                       </div>
 
                       <div>

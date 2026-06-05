@@ -1,10 +1,74 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import DashboardLayout from '../components/DashboardLayout';
+
+const Toggle = ({ active, onChange }) => (
+  <div 
+    onClick={() => onChange(!active)}
+    style={{ 
+      width: 44, height: 24, 
+      background: active ? '#F97316' : '#1E2D47', 
+      borderRadius: 12, position: 'relative', cursor: 'pointer',
+      transition: 'background 0.3s'
+    }}
+  >
+    <div style={{ 
+      width: 20, height: 20, background: '#fff', borderRadius: '50%', 
+      position: 'absolute', top: 2, 
+      left: active ? 22 : 2,
+      transition: 'left 0.3s'
+    }} />
+  </div>
+);
 
 export default function Settings() {
   const { user } = useAuth();
+  
+  const [settings, setSettings] = useState({
+    emailAlerts: true,
+    smsAlerts: false,
+    darkMode: true,
+    twoFactor: false
+  });
+  
+  const [showPasswordForm, setShowPasswordForm] = useState(false);
+  const [passwords, setPasswords] = useState({ old: '', new: '', confirm: '' });
+  const [pwdMessage, setPwdMessage] = useState('');
+
+  useEffect(() => {
+    const saved = localStorage.getItem('govai_settings');
+    if (saved) {
+      try {
+        setSettings({ ...settings, ...JSON.parse(saved) });
+      } catch (e) {}
+    }
+  }, []);
+
+  const updateSetting = (key, value) => {
+    const updated = { ...settings, [key]: value };
+    setSettings(updated);
+    localStorage.setItem('govai_settings', JSON.stringify(updated));
+  };
+
+  const handlePasswordSubmit = (e) => {
+    e.preventDefault();
+    if (passwords.new.length < 6) {
+      setPwdMessage('Password must be at least 6 characters.');
+      return;
+    }
+    if (passwords.new !== passwords.confirm) {
+      setPwdMessage('New passwords do not match!');
+      return;
+    }
+    // Simulate API call
+    setPwdMessage('Password updated successfully!');
+    setTimeout(() => {
+      setShowPasswordForm(false);
+      setPasswords({ old: '', new: '', confirm: '' });
+      setPwdMessage('');
+    }, 2000);
+  };
 
   return (
     <DashboardLayout>
@@ -36,9 +100,7 @@ export default function Settings() {
                 <div style={{ fontSize: 15, fontWeight: 600, color: '#fff' }}>Email Notifications</div>
                 <div style={{ fontSize: 12, color: '#6B7FAA', marginTop: 2 }}>Receive updates about your applications</div>
               </div>
-              <div style={{ width: 44, height: 24, background: '#F97316', borderRadius: 12, position: 'relative', cursor: 'pointer' }}>
-                <div style={{ width: 20, height: 20, background: '#fff', borderRadius: '50%', position: 'absolute', top: 2, right: 2 }} />
-              </div>
+              <Toggle active={settings.emailAlerts} onChange={(val) => updateSetting('emailAlerts', val)} />
             </div>
 
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 0', borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
@@ -46,9 +108,61 @@ export default function Settings() {
                 <div style={{ fontSize: 15, fontWeight: 600, color: '#fff' }}>SMS Alerts</div>
                 <div style={{ fontSize: 12, color: '#6B7FAA', marginTop: 2 }}>Get text messages for critical status changes</div>
               </div>
-              <div style={{ width: 44, height: 24, background: '#1E2D47', borderRadius: 12, position: 'relative', cursor: 'pointer' }}>
-                <div style={{ width: 20, height: 20, background: '#fff', borderRadius: '50%', position: 'absolute', top: 2, left: 2 }} />
+              <Toggle active={settings.smsAlerts} onChange={(val) => updateSetting('smsAlerts', val)} />
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 0', borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
+              <div>
+                <div style={{ fontSize: 15, fontWeight: 600, color: '#fff' }}>Dark Mode</div>
+                <div style={{ fontSize: 12, color: '#6B7FAA', marginTop: 2 }}>Experience the dark theme across the application</div>
               </div>
+              <Toggle active={settings.darkMode} onChange={(val) => updateSetting('darkMode', val)} />
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 0', borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
+              <div>
+                <div style={{ fontSize: 15, fontWeight: 600, color: '#fff' }}>Two-Factor Authentication (2FA)</div>
+                <div style={{ fontSize: 12, color: '#6B7FAA', marginTop: 2 }}>Secure your account with an extra layer of protection</div>
+              </div>
+              <button 
+                onClick={() => updateSetting('twoFactor', !settings.twoFactor)}
+                style={{ background: settings.twoFactor ? 'rgba(34,197,94,0.2)' : '#1E2D47', color: settings.twoFactor ? '#22C55E' : '#fff', border: `1px solid ${settings.twoFactor ? '#22C55E' : 'rgba(255,255,255,0.1)'}`, borderRadius: 8, padding: '8px 16px', fontSize: 12, fontWeight: 700, cursor: 'pointer', transition: 'all 0.3s' }}>
+                {settings.twoFactor ? '2FA Enabled ✓' : 'Enable 2FA'}
+              </button>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', padding: '16px 0' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <div>
+                  <div style={{ fontSize: 15, fontWeight: 600, color: '#fff' }}>Change Password</div>
+                  <div style={{ fontSize: 12, color: '#6B7FAA', marginTop: 2 }}>Update your current password for security</div>
+                </div>
+                <button 
+                  onClick={() => setShowPasswordForm(!showPasswordForm)}
+                  style={{ background: 'transparent', color: '#F97316', border: '1px solid #F97316', borderRadius: 8, padding: '8px 16px', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
+                  {showPasswordForm ? 'Cancel' : 'Update'}
+                </button>
+              </div>
+
+              <AnimatePresence>
+                {showPasswordForm && (
+                  <motion.form 
+                    initial={{ height: 0, opacity: 0, marginTop: 0 }} 
+                    animate={{ height: 'auto', opacity: 1, marginTop: 16 }} 
+                    exit={{ height: 0, opacity: 0, marginTop: 0 }}
+                    style={{ overflow: 'hidden' }}
+                    onSubmit={handlePasswordSubmit}
+                  >
+                    <div style={{ background: 'rgba(0,0,0,0.2)', padding: 16, borderRadius: 12, border: '1px solid rgba(255,255,255,0.05)', display: 'flex', flexDirection: 'column', gap: 12 }}>
+                      <input required type="password" placeholder="Current Password" value={passwords.old} onChange={(e) => setPasswords({...passwords, old: e.target.value})} className="govai-input" style={{ padding: '10px 14px', fontSize: 13 }} />
+                      <input required type="password" placeholder="New Password" value={passwords.new} onChange={(e) => setPasswords({...passwords, new: e.target.value})} className="govai-input" style={{ padding: '10px 14px', fontSize: 13 }} />
+                      <input required type="password" placeholder="Confirm New Password" value={passwords.confirm} onChange={(e) => setPasswords({...passwords, confirm: e.target.value})} className="govai-input" style={{ padding: '10px 14px', fontSize: 13 }} />
+                      {pwdMessage && <div style={{ fontSize: 12, fontWeight: 600, color: pwdMessage.includes('success') ? '#22C55E' : '#EF4444' }}>{pwdMessage}</div>}
+                      <button type="submit" className="btn-primary" style={{ padding: '10px', display: 'flex', justifyContent: 'center' }}>Save Password</button>
+                    </div>
+                  </motion.form>
+                )}
+              </AnimatePresence>
             </div>
           </div>
         </div>

@@ -10,6 +10,14 @@ const UserSchema = new mongoose.Schema({
   area: { type: String }, // Used for citizens to mark their default area
   allocatedAreas: { type: [String], default: [] }, // Used for admins (Tahsildars) to manage multiple jurisdictions
   avatar: { type: String }, // User profile picture (Google or Uploaded)
+  documents: [{
+    docType: { type: String },
+    url: { type: String },
+    status: { type: String, default: 'pending' },
+    aiRemark: { type: String },
+    verifiedAt: { type: Date }
+  }],
+  extractedData: { type: Map, of: mongoose.Schema.Types.Mixed, default: {} },
   createdAt: { type: Date, default: Date.now }
 });
 

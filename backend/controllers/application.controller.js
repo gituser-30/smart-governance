@@ -25,6 +25,34 @@ const verifyWithAI = async (documentUrl, documentType, extractedText) => {
 exports.analyzeDocuments = async (req, res, next) => {
   try {
     const { certificateType } = req.body;
+
+    // --- CHECK FOR EXISTING VALID APPLICATIONS ---
+    const existingApps = await Application.find({
+      user: req.user.id,
+      certificateType: certificateType
+    }).sort({ createdAt: -1 });
+
+    if (existingApps.length > 0) {
+      const latestApp = existingApps[0];
+      if (['Pending', 'In Progress'].includes(latestApp.status)) {
+        return res.status(400).json({ 
+          success: false, 
+          message: `You already have an application for ${certificateType} that is currently being processed.` 
+        });
+      }
+      if (latestApp.status === 'Approved') {
+        const oneYearAgo = new Date();
+        oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+        if (new Date(latestApp.createdAt) > oneYearAgo) {
+          return res.status(400).json({ 
+            success: false, 
+            message: `You already have an approved ${certificateType} that is valid for 1 year. You cannot apply again until it expires.` 
+          });
+        }
+      }
+    }
+    // ---------------------------------------------
+
     let docTypes = req.body.documentTypes || [];
     if (!Array.isArray(docTypes)) docTypes = [docTypes];
 
@@ -84,51 +112,51 @@ exports.analyzeDocuments = async (req, res, next) => {
       }
 
       try {
-        const worker = await Tesseract.createWorker(['eng', 'mar']);
-        const ret = await worker.recognize(processedDataURI);
-        rawExtractedText = ret.data.text;
-        await worker.terminate();
+        // Try Cloud OCR first for speed
+        console.log("Attempting fast Cloud OCR...");
+        try {
+          const ocrResponse = await axios.post('https://api.ocr.space/parse/image', new URLSearchParams({
+            apikey: 'helloworld',
+            base64Image: processedDataURI,
+            language: 'eng'
+          }), { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } });
 
-        // If local Tesseract extracted poor/fragmented text (< 120 chars), it missed the name. Hit Cloud OCR.
-        if (!rawExtractedText || rawExtractedText.trim().length < 120) {
-          console.log("Local OCR fragmented text. Falling back to Cloud OCR.space for accurate Name/Data...");
-          try {
-            const ocrResponse = await axios.post('https://api.ocr.space/parse/image', new URLSearchParams({
-              apikey: 'helloworld',
-              base64Image: processedDataURI,
-              language: 'eng'
-            }), { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } });
-
-            if (!ocrResponse.data.IsErroredOnProcessing && ocrResponse.data.ParsedResults?.length > 0) {
-              rawExtractedText = ocrResponse.data.ParsedResults[0].ParsedText;
-            }
-          } catch (fallbackErr) {
-            console.log("Cloud OCR Fallback failed:", fallbackErr.message);
+          if (!ocrResponse.data.IsErroredOnProcessing && ocrResponse.data.ParsedResults?.length > 0) {
+            rawExtractedText = ocrResponse.data.ParsedResults[0].ParsedText;
           }
+        } catch (cloudErr) {
+          console.log("Cloud OCR failed:", cloudErr.message);
+        }
+
+        // If Cloud OCR failed or returned bad text, fallback to local Tesseract
+        if (!rawExtractedText || rawExtractedText.trim().length < 10) {
+          console.log("Cloud OCR failed. Falling back to local Tesseract...");
+          const worker = await Tesseract.createWorker(['eng']); // 'eng' only for faster fallback
+          const ret = await worker.recognize(processedDataURI);
+          rawExtractedText = ret.data.text;
+          await worker.terminate();
         }
 
         if (!rawExtractedText || rawExtractedText.trim().length < 2) {
           rawExtractedText = "OCR extracted no readable text. Document might be too blurry.";
         }
       } catch (e) {
-        console.log("Local OCR Error:", e);
+        console.log("OCR Error:", e);
       }
 
       // 2. Pass to AI for Synchronous Semantic Check
       // SKIP AI CHECK for Passport Photo as it has no text to analyze
       let aiData = { isValid: true, extractedData: {} };
+      let docStatus = 'verified';
+      let aiRemark = null;
       
       if (assignedType !== 'Passport Photo') {
         const aiResult = await verifyWithAI(documentUrl, assignedType, rawExtractedText);
         aiData = aiResult.data || {};
 
         if (aiData.isValid === false) {
-          return res.status(200).json({
-            success: false,
-            message: `AI Rejected Document (${assignedType})`,
-            reason: aiData.rejectionReason || "Invalid document type or expired.",
-            rejectedDocument: assignedType
-          });
+          docStatus = 'rejected';
+          aiRemark = aiData.rejectionReason || "Invalid document type or expired.";
         }
       }
 
@@ -159,7 +187,8 @@ exports.analyzeDocuments = async (req, res, next) => {
       uploadedDocs.push({
         type: assignedType,
         url: documentUrl,
-        status: 'verified',
+        status: docStatus,
+        aiRemark: aiRemark,
         extractedData: aiData.extractedData || {}
       });
     }
@@ -186,25 +215,27 @@ exports.analyzeDocuments = async (req, res, next) => {
              };
 
              if (dist(masterName, currentName) < 0.5) {
-                return res.status(200).json({
-                   success: false,
-                   message: 'Documents Info Mismatch',
-                   reason: `The name on '${currentDoc.type}' (${currentDoc.extractedData.fullName}) does not match '${masterDoc.type}' (${masterDoc.extractedData.fullName}). Please upload documents belonging to the same person.`,
-                   rejectedDocument: currentDoc.type
-                });
+                currentDoc.status = 'rejected';
+                currentDoc.aiRemark = `Name mismatch: The name on '${currentDoc.type}' (${currentDoc.extractedData.fullName}) does not match '${masterDoc.type}' (${masterDoc.extractedData.fullName}).`;
              }
           }
 
           // Check DOB
           if (masterDOB && currentDOB && masterDOB !== currentDOB) {
-             return res.status(200).json({
-                success: false,
-                message: 'Documents Info Mismatch',
-                reason: `The Date of Birth on '${currentDoc.type}' (${currentDoc.extractedData.dob}) does not match '${masterDoc.type}' (${masterDoc.extractedData.dob}).`,
-                rejectedDocument: currentDoc.type
-             });
+             currentDoc.status = 'rejected';
+             currentDoc.aiRemark = `DOB mismatch: The Date of Birth on '${currentDoc.type}' (${currentDoc.extractedData.dob}) does not match '${masterDoc.type}' (${masterDoc.extractedData.dob}).`;
           }
        }
+    }
+
+    // Ensure ALL documents are verified before proceeding
+    const rejectedDoc = uploadedDocs.find(doc => doc.status === 'rejected');
+    if (rejectedDoc) {
+      return res.status(200).json({
+        success: false,
+        rejectedDocument: rejectedDoc.type,
+        reason: rejectedDoc.aiRemark || "Document is invalid or does not match the required criteria."
+      });
     }
 
     // 4. Return Success to Frontend for Final Form viewing
@@ -304,7 +335,7 @@ exports.getAllApplications = async (req, res, next) => {
 // @route   PUT /api/applications/:id/status
 exports.updateStatus = async (req, res, next) => {
   try {
-    const { status } = req.body;
+    const { status, rejectionReason } = req.body;
     
     // Use findByIdAndUpdate to avoid full validation errors on old records (like missing 'area')
     // We populate 'user' so we have the email for the notification
@@ -331,6 +362,27 @@ exports.updateStatus = async (req, res, next) => {
               <p style="margin: 5px 0 0 0;"><strong>Status:</strong> Approved</p>
             </div>
             <p>You can now log in to the portal to download your certificate.</p>
+            <p>Best regards,<br><strong>CertifyGov Portal Team</strong></p>
+          </div>
+        `
+      });
+    }
+
+    // Send email if rejected
+    if (status === 'Rejected' && application.user && application.user.email && rejectionReason) {
+      await sendEmail({
+        to: application.user.email,
+        subject: 'Application Needs Resubmission - Smart Governance Portal',
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 10px;">
+            <h2 style="color: #e74c3c;">Application Requires Resubmission</h2>
+            <p>Dear <strong>${application.user.fullName}</strong>,</p>
+            <p>Your application for <strong>${application.certificateType} Certificate</strong> (Tracking ID: #${application.trackingId}) requires your attention.</p>
+            <div style="background-color: #fff3f3; padding: 15px; border-left: 4px solid #e74c3c; border-radius: 5px; margin: 20px 0;">
+              <p style="margin: 0; color: #c0392b;"><strong>Officer's Remark / AI Verification Flag:</strong></p>
+              <p style="margin: 10px 0 0 0;">${rejectionReason}</p>
+            </div>
+            <p>Please log in to the portal to review and resubmit your application with the correct documents.</p>
             <p>Best regards,<br><strong>CertifyGov Portal Team</strong></p>
           </div>
         `

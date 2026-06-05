@@ -1,11 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { motion } from 'framer-motion';
 import DashboardLayout from '../components/DashboardLayout';
+import { useTranslation } from 'react-i18next';
 
 export default function Certificates() {
   const { token } = useAuth();
+  const navigate = useNavigate();
+  const { t } = useTranslation();
   const [applications, setApplications] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -28,8 +32,8 @@ export default function Certificates() {
   return (
     <DashboardLayout>
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}>
-        <h1 style={{ fontSize: 28, fontWeight: 800, marginBottom: 6 }}>My Certificates</h1>
-        <p style={{ color: '#6B7FAA', fontSize: 14, marginBottom: 28 }}>View and manage all your certificate applications</p>
+        <h1 style={{ fontSize: 28, fontWeight: 800, marginBottom: 6 }}>{t('sidebar_myCertificates', 'My Certificates')}</h1>
+        <p style={{ color: '#6B7FAA', fontSize: 14, marginBottom: 28 }}>{t('cert_desc', 'View and manage all your certificate applications')}</p>
         
         <div style={{ background: '#0D1626', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 16, overflow: 'hidden' }}>
           {loading ? (
@@ -39,13 +43,13 @@ export default function Certificates() {
           ) : applications.length === 0 ? (
              <div style={{ padding: '60px 22px', textAlign: 'center', color: '#4B5B7A' }}>
                <div style={{ fontSize: 44, marginBottom: 15 }}>📄</div>
-               <div style={{ fontSize: 16, fontWeight: 700, color: '#6B7FAA' }}>No certificates found</div>
+               <div style={{ fontSize: 16, fontWeight: 700, color: '#6B7FAA' }}>{t('cert_noFound', 'No certificates found')}</div>
              </div>
           ) : (
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
                 <tr>
-                  {['Tracking ID', 'Certificate Type', 'Status', 'Date'].map(h => (
+                  {[t('table_trackingId', 'Tracking ID'), t('table_type', 'Certificate Type'), t('table_status', 'Status'), t('table_date', 'Date'), t('table_action', 'Action')].map(h => (
                     <th key={h} style={{ textAlign: 'left', padding: '16px 22px', fontSize: 11, fontWeight: 700, color: '#4B5B7A', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>{h}</th>
                   ))}
                 </tr>
@@ -70,6 +74,13 @@ export default function Certificates() {
                     </td>
                     <td style={{ padding: '16px 22px', color: '#6B7FAA', fontSize: 13 }}>
                       {new Date(app.createdAt).toLocaleDateString()}
+                    </td>
+                    <td style={{ padding: '16px 22px' }}>
+                      {app.status === 'Approved' && (
+                        <button onClick={() => navigate(`/certificate/${app.trackingId}`)} style={{ background: 'none', border: 'none', color: '#3B82F6', fontWeight: 700, cursor: 'pointer', fontSize: 13, display: 'flex', alignItems: 'center', gap: 6 }}>
+                          {t('cert_viewDownload', 'View / Download')}
+                        </button>
+                      )}
                     </td>
                   </motion.tr>
                 ))}
