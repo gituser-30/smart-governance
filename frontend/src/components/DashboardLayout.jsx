@@ -1,6 +1,7 @@
 import React from 'react';
 import Navbar from './Navbar';
 import Sidebar from './Sidebar';
+import Chatbot from './Chatbot';
 
 export default function DashboardLayout({ children }) {
   return (
@@ -77,6 +78,8 @@ export default function DashboardLayout({ children }) {
           {children}
         </main>
       </div>
+      
+      <Chatbot />
     </div>
   );
 }

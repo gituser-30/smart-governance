@@ -11,5 +11,8 @@ router.post('/google', googleLogin);
 router.post('/send-otp', sendOTP);
 router.post('/verify-otp', verifyOTP);
 router.get('/me', protect, getMe);
+router.put('/settings', protect, require('../controllers/auth.controller').updateSettings);
+router.put('/password', protect, require('../controllers/auth.controller').updatePassword);
+router.get('/users/count', protect, require('../controllers/auth.controller').getUsersCount);
 
 module.exports = router;

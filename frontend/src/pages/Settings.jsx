@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { motion, AnimatePresence } from 'framer-motion';
+import axios from 'axios';
 import DashboardLayout from '../components/DashboardLayout';
 
 const Toggle = ({ active, onChange }) => (
@@ -23,7 +24,7 @@ const Toggle = ({ active, onChange }) => (
 );
 
 export default function Settings() {
-  const { user } = useAuth();
+  const { user, setUser, token } = useAuth();
   
   const [settings, setSettings] = useState({
     emailAlerts: true,
@@ -37,21 +38,36 @@ export default function Settings() {
   const [pwdMessage, setPwdMessage] = useState('');
 
   useEffect(() => {
-    const saved = localStorage.getItem('govai_settings');
-    if (saved) {
-      try {
-        setSettings({ ...settings, ...JSON.parse(saved) });
-      } catch (e) {}
+    if (user && user.settings) {
+      setSettings(prev => ({ ...prev, ...user.settings }));
+    } else {
+      const saved = localStorage.getItem('govai_settings');
+      if (saved) {
+        try {
+          setSettings(prev => ({ ...prev, ...JSON.parse(saved) }));
+        } catch (e) {}
+      }
     }
-  }, []);
+  }, [user]);
 
-  const updateSetting = (key, value) => {
+  const updateSetting = async (key, value) => {
     const updated = { ...settings, [key]: value };
     setSettings(updated);
+    if (user) {
+      setUser({ ...user, settings: updated });
+    }
     localStorage.setItem('govai_settings', JSON.stringify(updated));
+
+    try {
+      await axios.put('http://localhost:5000/api/auth/settings', updated, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+    } catch (err) {
+      console.error("Failed to sync settings with server", err);
+    }
   };
 
-  const handlePasswordSubmit = (e) => {
+  const handlePasswordSubmit = async (e) => {
     e.preventDefault();
     if (passwords.new.length < 6) {
       setPwdMessage('Password must be at least 6 characters.');
@@ -61,13 +77,24 @@ export default function Settings() {
       setPwdMessage('New passwords do not match!');
       return;
     }
-    // Simulate API call
-    setPwdMessage('Password updated successfully!');
-    setTimeout(() => {
-      setShowPasswordForm(false);
-      setPasswords({ old: '', new: '', confirm: '' });
-      setPwdMessage('');
-    }, 2000);
+    
+    try {
+      const res = await axios.put('http://localhost:5000/api/auth/password', {
+        oldPassword: passwords.old,
+        newPassword: passwords.new
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      setPwdMessage('Password updated successfully!');
+      setTimeout(() => {
+        setShowPasswordForm(false);
+        setPasswords({ old: '', new: '', confirm: '' });
+        setPwdMessage('');
+      }, 2000);
+    } catch (err) {
+      setPwdMessage(err.response?.data?.message || 'Error updating password');
+    }
   };
 
   return (

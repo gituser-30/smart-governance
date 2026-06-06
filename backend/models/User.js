@@ -18,6 +18,12 @@ const UserSchema = new mongoose.Schema({
     verifiedAt: { type: Date }
   }],
   extractedData: { type: Map, of: mongoose.Schema.Types.Mixed, default: {} },
+  settings: {
+    emailAlerts: { type: Boolean, default: true },
+    smsAlerts: { type: Boolean, default: false },
+    darkMode: { type: Boolean, default: true },
+    twoFactor: { type: Boolean, default: false }
+  },
   createdAt: { type: Date, default: Date.now }
 });
 

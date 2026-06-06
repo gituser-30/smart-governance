@@ -19,6 +19,17 @@ export const AuthProvider = ({ children }) => {
     }
   }, [token]);
 
+  // Apply dark mode setting globally
+  useEffect(() => {
+    // Default is dark mode. If explicitly false, apply light-mode
+    const isDark = user?.settings?.darkMode ?? true;
+    if (isDark) {
+      document.body.classList.remove('light-mode');
+    } else {
+      document.body.classList.add('light-mode');
+    }
+  }, [user?.settings?.darkMode]);
+
   const fetchUser = async () => {
     try {
       const res = await axios.get('http://localhost:5000/api/auth/me');
@@ -67,7 +78,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, login, loginWithGoogle, register, sendOTP, verifyOTP, logout, loading }}>
+    <AuthContext.Provider value={{ user, setUser, token, login, loginWithGoogle, register, sendOTP, verifyOTP, logout, loading }}>
       {children}
     </AuthContext.Provider>
   );

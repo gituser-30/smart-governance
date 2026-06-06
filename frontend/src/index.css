@@ -284,3 +284,61 @@ select.gov-input option {
 .glow-text-saffron {
   text-shadow: 0 0 20px rgba(255, 153, 51, 0.5);
 }
+
+/* ─── Light Mode Overrides ─── */
+body.light-mode {
+  background-color: #f8fafc;
+  color: #0f172a;
+}
+.light-mode .gov-card,
+.light-mode .glass,
+.light-mode .glass-card,
+.light-mode .glass-3d,
+.light-mode .gsap-stat-card,
+.light-mode .gsap-main-panel,
+.light-mode .gsap-sidebar-panel,
+.light-mode [style*="background: #0D1626"],
+.light-mode [style*="background: linear-gradient(145deg, #0D1626 0%, #09101D 100%)"] {
+  background: #ffffff !important;
+  border-color: #e2e8f0 !important;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06) !important;
+  color: #0f172a !important;
+}
+.light-mode .gov-input,
+.light-mode input.govai-input,
+.light-mode select.govai-input,
+.light-mode textarea.govai-input {
+  background: #ffffff !important;
+  border-color: #cbd5e1 !important;
+  color: #0f172a !important;
+}
+.light-mode .gov-input:focus,
+.light-mode input.govai-input:focus,
+.light-mode select.govai-input:focus,
+.light-mode textarea.govai-input:focus {
+  border-color: var(--color-saffron-500) !important;
+  box-shadow: 0 0 0 3px rgba(255, 153, 51, 0.2) !important;
+}
+.light-mode .text-white,
+.light-mode h1, .light-mode h2, .light-mode h3, .light-mode h4,
+.light-mode [style*="color: #fff"] {
+  color: #0f172a !important;
+}
+.light-mode .text-navy-300,
+.light-mode .text-navy-400,
+.light-mode [style*="color: #4B5B7A"],
+.light-mode [style*="color: #6B7FAA"] {
+  color: #475569 !important;
+}
+.light-mode .bg-navy-800,
+.light-mode .bg-navy-900,
+.light-mode [style*="background: #042C53"],
+.light-mode [style*="background: rgba(255,255,255,0.02)"] {
+  background: #f1f5f9 !important;
+  border-color: #e2e8f0 !important;
+}
+.light-mode .border-navy-600,
+.light-mode [style*="border: 1px solid rgba(255,255,255,0.06)"],
+.light-mode [style*="border-bottom: 1px solid rgba(255,255,255,0.05)"] {
+  border-color: #e2e8f0 !important;
+}

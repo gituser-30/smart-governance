@@ -2,9 +2,18 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import DashboardLayout from '../components/DashboardLayout';
 import { useTranslation } from 'react-i18next';
+import { FileText, ExternalLink } from 'lucide-react';
+
+const CERT_META = {
+  Income: { label: 'Income Certificate', icon: <FileText size={18} />, color: '#F97316', bg: 'rgba(249,115,22,0.1)' },
+  Domicile: { label: 'Domicile Certificate', icon: <FileText size={18} />, color: '#22C55E', bg: 'rgba(34,197,94,0.1)' },
+  EWS: { label: 'EWS Certificate', icon: <FileText size={18} />, color: '#3B82F6', bg: 'rgba(59,130,246,0.1)' },
+  Birth: { label: 'Birth Certificate', icon: <FileText size={18} />, color: '#A855F7', bg: 'rgba(168,85,247,0.1)' },
+};
+const CERT_TYPES = Object.keys(CERT_META);
 
 export default function Certificates() {
   const { token } = useAuth();
@@ -12,6 +21,7 @@ export default function Certificates() {
   const { t } = useTranslation();
   const [applications, setApplications] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [showApplyModal, setShowApplyModal] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -32,8 +42,15 @@ export default function Certificates() {
   return (
     <DashboardLayout>
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}>
-        <h1 style={{ fontSize: 28, fontWeight: 800, marginBottom: 6 }}>{t('sidebar_myCertificates', 'My Certificates')}</h1>
-        <p style={{ color: '#6B7FAA', fontSize: 14, marginBottom: 28 }}>{t('cert_desc', 'View and manage all your certificate applications')}</p>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 28 }}>
+          <div>
+            <h1 style={{ fontSize: 28, fontWeight: 800, marginBottom: 6 }}>{t('sidebar_myCertificates', 'My Certificates')}</h1>
+            <p style={{ color: '#6B7FAA', fontSize: 14 }}>{t('cert_desc', 'View and manage all your certificate applications')}</p>
+          </div>
+          <button onClick={() => setShowApplyModal(true)} className="btn-primary" style={{ padding: '12px 20px', borderRadius: 12 }}>
+            + Apply for Certificate
+          </button>
+        </div>
         
         <div style={{ background: '#0D1626', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 16, overflow: 'hidden' }}>
           {loading ? (
@@ -89,6 +106,49 @@ export default function Certificates() {
           )}
         </div>
       </motion.div>
+
+      {/* Apply Modal */}
+      <AnimatePresence>
+        {showApplyModal && (
+          <motion.div
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            style={{ position: 'fixed', inset: 0, background: 'rgba(2,6,12,0.85)', backdropFilter: 'blur(12px)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}
+            onClick={(e) => { if (e.target === e.currentTarget) setShowApplyModal(false); }}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, y: 30 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.9, y: 30 }}
+              style={{ background: '#0D1626', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 24, width: '100%', maxWidth: 500, overflow: 'hidden' }}
+            >
+              <div style={{ height: 4, background: 'linear-gradient(90deg, #F97316, #3B82F6, #22C55E)' }} />
+              <div style={{ padding: '24px 30px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                <h3 style={{ fontSize: 20, fontWeight: 800, margin: 0 }}>Choose Certificate</h3>
+                <button onClick={() => setShowApplyModal(false)} style={{ background: '#131E33', border: 'none', color: '#6B7FAA', width: 32, height: 32, borderRadius: '50%', cursor: 'pointer', fontSize: 20 }}>×</button>
+              </div>
+
+              <div style={{ padding: '30px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 15 }}>
+                {CERT_TYPES.map((type) => {
+                  const m = CERT_META[type];
+                  return (
+                    <motion.button
+                      whileHover={{ scale: 1.03, y: -2 }} whileTap={{ scale: 0.97 }} key={type}
+                      onClick={() => { navigate(`/apply?type=${type}`); setShowApplyModal(false); }}
+                      style={{ background: '#070C18', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 16, padding: '20px', cursor: 'pointer', textAlign: 'left', display: 'flex', flexDirection: 'column', gap: 12 }}
+                    >
+                      <div style={{ width: 40, height: 40, borderRadius: 10, background: m.bg, color: m.color, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        {m.icon}
+                      </div>
+                      <div>
+                        <div style={{ fontSize: 14, fontWeight: 800, color: '#fff', marginBottom: 2 }}>{type}</div>
+                        <div style={{ fontSize: 11, color: '#4B5B7A', fontWeight: 600 }}>Official Certificate</div>
+                      </div>
+                    </motion.button>
+                  );
+                })}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </DashboardLayout>
   );
 }

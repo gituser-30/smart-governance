@@ -353,3 +353,54 @@ exports.adminLogin = async (req, res, next) => {
     res.status(500).json({ success: false, message: 'Server error during admin login' });
   }
 };
+
+// @desc    Update user settings
+// @route   PUT /api/auth/settings
+exports.updateSettings = async (req, res, next) => {
+  try {
+    const user = await User.findByIdAndUpdate(
+      req.user.id,
+      { $set: { settings: req.body } },
+      { new: true, runValidators: true }
+    );
+    res.status(200).json({ success: true, data: user.settings });
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'Server error updating settings' });
+  }
+};
+
+// @desc    Update user password
+// @route   PUT /api/auth/password
+exports.updatePassword = async (req, res, next) => {
+  try {
+    const { oldPassword, newPassword } = req.body;
+    
+    const user = await User.findById(req.user.id);
+    if (!user.password) {
+      return res.status(400).json({ success: false, message: 'Your account uses Google Sign-In. You cannot change password.' });
+    }
+
+    const isMatch = await user.matchPassword(oldPassword);
+    if (!isMatch) {
+      return res.status(400).json({ success: false, message: 'Incorrect old password' });
+    }
+
+    user.password = newPassword;
+    await user.save(); // pre-save hook will hash it
+
+    res.status(200).json({ success: true, message: 'Password updated successfully' });
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'Server error updating password' });
+  }
+};
+
+// @desc    Get total users count (Admin)
+// @route   GET /api/auth/users/count
+exports.getUsersCount = async (req, res, next) => {
+  try {
+    const count = await User.countDocuments({ role: 'citizen' });
+    res.status(200).json({ success: true, count });
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'Server error fetching user count' });
+  }
+};

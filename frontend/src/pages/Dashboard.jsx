@@ -3,6 +3,8 @@ import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { motion, AnimatePresence } from 'framer-motion';
+import gsap from 'gsap';
+import { useGSAP } from '@gsap/react';
 import { useTranslation } from 'react-i18next';
 import Navbar from '../components/Navbar';
 import DashboardLayout from '../components/DashboardLayout';
@@ -34,24 +36,8 @@ const CERT_META = {
 const CERT_TYPES = Object.keys(CERT_META);
 
 /* ─────────────────────────────────────────
-   Animation Variants
+   GSAP is now used for main entry animations
 ───────────────────────────────────────── */
-const containerVariants = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: { staggerChildren: 0.08, delayChildren: 0.1 }
-  }
-};
-
-const itemVariants = {
-  hidden: { y: 20, opacity: 0 },
-  visible: { y: 0, opacity: 1, transition: { duration: 0.5, ease: [0.16, 1, 0.3, 1] } }
-};
-
-const hoverScale = {
-  hover: { scale: 1.02, y: -4, transition: { duration: 0.2, ease: "easeOut" } }
-};
 
 /* ─────────────────────────────────────────
    Status badge config
@@ -79,12 +65,24 @@ function StatusBadge({ status }) {
   );
 }
 
-function StatCard({ label, value, sub, accent, icon, delay }) {
+function StatCard({ label, value, sub, accent, icon, className }) {
+  const cardRef = React.useRef();
+  const { contextSafe } = useGSAP({ scope: cardRef });
+
+  const handleMouseEnter = contextSafe(() => {
+    gsap.to(cardRef.current, { scale: 1.02, y: -5, duration: 0.3, ease: 'power2.out', borderColor: accent + '60', boxShadow: `0 15px 35px -10px ${accent}40` });
+  });
+  
+  const handleMouseLeave = contextSafe(() => {
+    gsap.to(cardRef.current, { scale: 1, y: 0, duration: 0.3, ease: 'power2.out', borderColor: 'rgba(255,255,255,0.06)', boxShadow: '0 10px 30px -10px rgba(0,0,0,0.5)' });
+  });
+
   return (
-    <motion.div
-      variants={itemVariants}
-      whileHover="hover"
-      variants={hoverScale}
+    <div
+      ref={cardRef}
+      className={`gsap-stat-card ${className || ''}`}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
       style={{
         background: 'linear-gradient(145deg, #0D1626 0%, #09101D 100%)',
         border: '1px solid rgba(255,255,255,0.06)',
@@ -122,7 +120,7 @@ function StatCard({ label, value, sub, accent, icon, delay }) {
           {icon}
         </div>
       </div>
-    </motion.div>
+    </div>
   );
 }
 
@@ -204,6 +202,30 @@ export default function Dashboard() {
   const [activeFilter, setActiveFilter] = useState('All');
   const [gForm, setGForm] = useState({ title: '', department: 'General', area: '', description: '' });
   const [gSubmitting, setGSubmitting] = useState(false);
+  const containerRef = React.useRef();
+
+  useGSAP(() => {
+    const tl = gsap.timeline();
+    tl.fromTo('.gsap-header', 
+      { y: -30, opacity: 0 }, 
+      { y: 0, opacity: 1, duration: 0.8, ease: 'power3.out' }
+    )
+    .fromTo('.gsap-stat-card', 
+      { y: 40, opacity: 0 }, 
+      { y: 0, opacity: 1, duration: 0.6, stagger: 0.1, ease: 'back.out(1.2)' },
+      "-=0.4"
+    )
+    .fromTo('.gsap-main-panel',
+      { x: -30, opacity: 0 },
+      { x: 0, opacity: 1, duration: 0.8, ease: 'power3.out' },
+      "-=0.4"
+    )
+    .fromTo('.gsap-sidebar-panel',
+      { x: 30, opacity: 0 },
+      { x: 0, opacity: 1, duration: 0.8, stagger: 0.15, ease: 'power3.out' },
+      "-=0.6"
+    );
+  }, { scope: containerRef });
 
   useEffect(() => {
     const fetchData = async () => {
@@ -248,18 +270,15 @@ export default function Dashboard() {
 
   return (
     <DashboardLayout>
-      <div style={{ position: 'relative', minHeight: '100%' }}>
+      <div ref={containerRef} style={{ position: 'relative', minHeight: '100%' }}>
         {/* Background Glows */}
         <div style={{ position: 'fixed', top: '10%', right: '5%', width: '40vw', height: '40vw', background: 'radial-gradient(circle, rgba(249,115,22,0.05) 0%, transparent 70%)', pointerEvents: 'none', zIndex: 0 }} />
         <div style={{ position: 'fixed', bottom: '10%', left: '5%', width: '30vw', height: '30vw', background: 'radial-gradient(circle, rgba(59,130,246,0.03) 0%, transparent 70%)', pointerEvents: 'none', zIndex: 0 }} />
 
-        <motion.div
-          initial="hidden" animate="visible" variants={containerVariants}
-          style={{ position: 'relative', zIndex: 1 }}
-        >
+        <div style={{ position: 'relative', zIndex: 1 }}>
           {/* ── Header Section ── */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 40, flexWrap: 'wrap', gap: 20 }}>
-            <motion.div variants={itemVariants}>
+          <div className="gsap-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 40, flexWrap: 'wrap', gap: 20 }}>
+            <div>
               <h1 style={{ fontSize: 32, fontWeight: 800, letterSpacing: '-0.04em', margin: '0 0 8px' }}>
                 {t('sidebar_dashboard')}
               </h1>
@@ -269,16 +288,16 @@ export default function Dashboard() {
                   {t('dash_activeSession')} <span style={{ color: '#fff' }}>{user?.fullName}</span>
                 </span>
               </div>
-            </motion.div>
+            </div>
 
-            <motion.div variants={itemVariants} style={{ display: 'flex', gap: 12 }}>
-              <button className="btn-secondary" onClick={() => setShGrievanceModal(true)} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '12px 20px' }}>
+            <div style={{ display: 'flex', gap: 12 }}>
+              <button className="btn-secondary hover:-translate-y-0.5 transition-transform" onClick={() => setShGrievanceModal(true)} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '12px 20px' }}>
                 <AlertCircle size={16} /> {t('dash_lodgeComplaint')}
               </button>
-              <button className="btn-primary" onClick={() => setShowApplyModal(true)} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '12px 24px' }}>
+              <button className="btn-primary hover:-translate-y-0.5 transition-transform hover:shadow-gov-green/30 hover:shadow-lg" onClick={() => setShowApplyModal(true)} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '12px 24px' }}>
                 <Plus size={18} /> {t('dash_newApplication')}
               </button>
-            </motion.div>
+            </div>
           </div>
 
           {/* ── Stats Grid ── */}
@@ -291,7 +310,7 @@ export default function Dashboard() {
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 320px', gap: 24, alignItems: 'start' }}>
             {/* ── Main Application Tracking ── */}
-            <motion.div variants={itemVariants} style={{ background: '#0D1626', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 24, overflow: 'hidden', boxShadow: '0 20px 40px -10px rgba(0,0,0,0.3)' }}>
+            <div className="gsap-main-panel" style={{ background: '#0D1626', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 24, overflow: 'hidden', boxShadow: '0 20px 40px -10px rgba(0,0,0,0.3)' }}>
               <div style={{ padding: '24px 30px', borderBottom: '1px solid rgba(255,255,255,0.05)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <h3 style={{ fontSize: 18, fontWeight: 800, margin: 0 }}>{t('dash_applicationTracking')}</h3>
                 <div style={{ display: 'flex', gap: 6 }}>
@@ -364,12 +383,12 @@ export default function Dashboard() {
                   </div>
                 )}
               </div>
-            </motion.div>
+            </div>
 
             {/* ── Sidebar Actions ── */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
               {/* Quick Actions */}
-              <motion.div variants={itemVariants} style={{ background: '#0D1626', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 24, padding: 24 }}>
+              <div className="gsap-sidebar-panel" style={{ background: '#0D1626', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 24, padding: 24 }}>
                 <h4 style={{ fontSize: 14, fontWeight: 800, color: '#fff', marginBottom: 20, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{t('dash_recentGrievances')}</h4>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                   {grievances.length === 0 ? (
@@ -386,10 +405,10 @@ export default function Dashboard() {
                     {t('dash_viewAllTickets')} <ChevronRight size={14} />
                   </button>
                 </div>
-              </motion.div>
+              </div>
 
               {/* Resources */}
-              <motion.div variants={itemVariants} style={{ background: 'linear-gradient(135deg, #F9731620 0%, #3B82F620 100%)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 24, padding: 24, position: 'relative', overflow: 'hidden' }}>
+              <div className="gsap-sidebar-panel" style={{ background: 'linear-gradient(135deg, #F9731620 0%, #3B82F620 100%)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 24, padding: 24, position: 'relative', overflow: 'hidden' }}>
                 <div style={{ position: 'relative', zIndex: 2 }}>
                   <h4 style={{ fontSize: 14, fontWeight: 800, color: '#fff', marginBottom: 12 }}>{t('dash_needHelp')}</h4>
                   <p style={{ fontSize: 12, color: '#9DB4D8', lineHeight: 1.6, marginBottom: 20 }}>{t('dash_aiAssistantDesc')}</p>
@@ -397,10 +416,10 @@ export default function Dashboard() {
                     {t('dash_helpCenter')} <ExternalLink size={14} />
                   </button>
                 </div>
-              </motion.div>
+              </div>
             </div>
           </div>
-        </motion.div>
+        </div>
 
         {/* Modals */}
         <AnimatePresence>

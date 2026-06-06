@@ -3,13 +3,29 @@ import { useAuth } from '../../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { motion, AnimatePresence } from 'framer-motion';
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip as ChartTooltip,
+  Legend,
+  Filler
+} from 'chart.js';
+import { Line } from 'react-chartjs-2';
 import { Search, CheckCircle, XCircle, Eye, ClipboardList, User as UserIcon, Loader2, Shield, FileText } from 'lucide-react';
 import AdminLayout from '../../components/AdminLayout';
+
+ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, ChartTooltip, Legend, Filler);
 
 export default function AdminDashboard() {
    const { token, user } = useAuth();
    const navigate = useNavigate();
    const [applications, setApplications] = useState([]);
+   const [grievances, setGrievances] = useState([]);
+   const [totalUsers, setTotalUsers] = useState(0);
    const [loading, setLoading] = useState(true);
 
    const [selectedApp, setSelectedApp] = useState(null);
@@ -31,8 +47,14 @@ export default function AdminDashboard() {
 
    const fetchData = async () => {
       try {
-         const appRes = await axios.get('http://localhost:5000/api/applications/all', { headers: { Authorization: `Bearer ${token}` } });
+         const [appRes, grvRes, userRes] = await Promise.all([
+            axios.get('http://localhost:5000/api/applications/all', { headers: { Authorization: `Bearer ${token}` } }),
+            axios.get('http://localhost:5000/api/grievances/all', { headers: { Authorization: `Bearer ${token}` } }),
+            axios.get('http://localhost:5000/api/auth/users/count', { headers: { Authorization: `Bearer ${token}` } })
+         ]);
          setApplications(appRes.data.data);
+         setGrievances(grvRes.data.data);
+         setTotalUsers(userRes.data.count || 0);
       } catch (err) { console.error("Failed to load data", err); }
       finally { setLoading(false); }
    };
@@ -81,13 +103,126 @@ export default function AdminDashboard() {
       }}>{status}</span>;
    };
 
+   // Generate monthly chart data
+   const getMonthlyData = () => {
+      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      const data = months.map(m => ({ name: m, Requests: 0, Pending: 0, SolvedGrievances: 0 }));
+      
+      applications.forEach(app => {
+         const d = new Date(app.createdAt);
+         const monthIndex = d.getMonth();
+         data[monthIndex].Requests += 1;
+         if (['Pending Review', 'In Progress', 'Submitted', 'AI Verified'].includes(app.status)) {
+            data[monthIndex].Pending += 1;
+         }
+      });
+      
+      grievances.forEach(g => {
+         const d = new Date(g.createdAt);
+         const monthIndex = d.getMonth();
+         if (g.status === 'Resolved') {
+            data[monthIndex].SolvedGrievances += 1;
+         } else {
+            data[monthIndex].Pending += 1; 
+         }
+      });
+      
+      return data;
+   };
+   const chartData = getMonthlyData();
+
    return (
       <AdminLayout>
          {/* Header */}
          <div className="flex flex-wrap justify-between items-end mb-8 pb-6 gap-4" style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
             <div>
-               <h2 className="text-2xl font-black text-white">Application Review</h2>
-               <p className="text-navy-400 font-medium text-sm mt-1" style={{ color: '#6B7FAA' }}>Review AI-verified citizen applications.</p>
+               <h2 className="text-2xl font-black text-white">System Analytics & Overview</h2>
+               <p className="text-navy-400 font-medium text-sm mt-1" style={{ color: '#6B7FAA' }}>Monitor citizen engagement and system performance.</p>
+            </div>
+         </div>
+
+         {/* Analytics Panel */}
+         <div style={{ background: 'linear-gradient(145deg, rgba(13,22,38,0.9), rgba(9,16,29,0.95))', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 24, padding: 32, marginBottom: 40, boxShadow: '0 20px 40px rgba(0,0,0,0.4)' }}>
+            
+            {/* Stat Cards */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-10">
+               {[
+                  { label: 'Active Citizens', value: totalUsers, color: '#A855F7' },
+                  { label: 'Total Requests', value: applications.length, color: '#3B82F6' },
+                  { label: 'Pending Issues', value: stats.pending + grievances.filter(g => g.status !== 'Resolved').length, color: '#F97316' },
+                  { label: 'Resolved Cases', value: stats.approved + grievances.filter(g => g.status === 'Resolved').length, color: '#22C55E' },
+               ].map(s => (
+                  <div key={s.label} style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: 16, padding: 20 }}>
+                     <p style={{ fontSize: 11, fontWeight: 800, color: '#5B6E94', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>{s.label}</p>
+                     <p style={{ fontSize: 32, fontWeight: 900, color: s.color, fontFamily: 'monospace' }}>{s.value}</p>
+                  </div>
+               ))}
+            </div>
+
+            {/* Graphical Analytics */}
+            <div>
+               <h3 style={{ fontSize: 14, fontWeight: 800, color: '#fff', marginBottom: 20, textTransform: 'uppercase', letterSpacing: '0.05em', display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#3B82F6' }} /> Monthly Engagement Graph
+               </h3>
+               <div style={{ width: '100%', height: 320, background: 'rgba(2,21,38,0.5)', padding: 16, borderRadius: 16, border: '1px solid rgba(255,255,255,0.03)' }}>
+                  <Line 
+                     options={{
+                     responsive: true,
+                     maintainAspectRatio: false,
+                     plugins: {
+                        legend: { position: 'top', labels: { color: '#fff', font: { family: 'Outfit', weight: 'bold' } } }
+                     },
+                     scales: {
+                        x: { grid: { display: false }, ticks: { color: '#5B6E94', font: { family: 'monospace' } } },
+                        y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#5B6E94' }, beginAtZero: true }
+                     },
+                     interaction: { mode: 'index', intersect: false }
+                  }}
+                  data={{
+                     labels: chartData.map(d => d.name),
+                     datasets: [
+                        {
+                           label: 'Requests',
+                           data: chartData.map(d => d.Requests),
+                           borderColor: '#3B82F6',
+                           backgroundColor: 'rgba(59, 130, 246, 0.2)',
+                           fill: true,
+                           tension: 0.4,
+                           borderWidth: 3,
+                           pointBackgroundColor: '#3B82F6'
+                        },
+                        {
+                           label: 'Pending Issues',
+                           data: chartData.map(d => d.Pending),
+                           borderColor: '#F97316',
+                           backgroundColor: 'rgba(249, 115, 22, 0.2)',
+                           fill: true,
+                           tension: 0.4,
+                           borderWidth: 3,
+                           pointBackgroundColor: '#F97316'
+                        },
+                        {
+                           label: 'Solved Grievances',
+                           data: chartData.map(d => d.SolvedGrievances),
+                           borderColor: '#22C55E',
+                           backgroundColor: 'rgba(34, 197, 94, 0.2)',
+                           fill: true,
+                           tension: 0.4,
+                           borderWidth: 3,
+                           pointBackgroundColor: '#22C55E'
+                        }
+                     ]
+                  }} 
+               />
+            </div>
+         </div>
+      </div>
+
+         {/* Application Review Header */}
+         <div className="flex flex-wrap justify-between items-end mb-6 gap-4">
+            <div>
+               <h3 className="text-xl font-black text-white">Application Queue</h3>
+               <p className="text-navy-400 font-medium text-sm mt-1" style={{ color: '#6B7FAA' }}>Review and approve AI-verified citizen applications.</p>
             </div>
             <div className="flex-1 max-w-sm">
                <div className="relative">
@@ -95,21 +230,6 @@ export default function AdminDashboard() {
                   <input type="text" placeholder="Search by ID, Name, Email..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="govai-input pl-10" />
                </div>
             </div>
-         </div>
-
-         {/* Stat Cards */}
-         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-            {[
-               { label: 'Pending', value: stats.pending, color: '#F97316', bg: 'rgba(249,115,22,0.1)' },
-               { label: 'In Progress', value: stats.inProgress, color: '#3B82F6', bg: 'rgba(59,130,246,0.1)' },
-               { label: 'Approved', value: stats.approved, color: '#22C55E', bg: 'rgba(34,197,94,0.1)' },
-               { label: 'Rejected', value: stats.rejected, color: '#EF4444', bg: 'rgba(239,68,68,0.1)' },
-            ].map(s => (
-               <div key={s.label} style={{ background: '#0D1626', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 16, padding: 20 }}>
-                  <p style={{ fontSize: 11, fontWeight: 700, color: '#5B6E94', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>{s.label}</p>
-                  <p style={{ fontSize: 28, fontWeight: 800, color: s.color }}>{s.value}</p>
-               </div>
-            ))}
          </div>
 
          {/* Applications Table */}
