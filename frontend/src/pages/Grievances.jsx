@@ -20,7 +20,7 @@ export default function Grievances() {
     e.preventDefault();
     setGSubmitting(true);
     try {
-      await axios.post('http://localhost:5000/api/grievances/submit', gForm, { headers: { Authorization: `Bearer ${token}` } });
+      await axios.post('http://localhost:5000/api/grievances', gForm, { headers: { Authorization: `Bearer ${token}` } });
       setShGrievanceModal(false);
       setGForm({ title: '', department: 'Revenue', area: '', description: '' });
       const res = await axios.get('http://localhost:5000/api/grievances/my', { headers: { Authorization: `Bearer ${token}` } });
