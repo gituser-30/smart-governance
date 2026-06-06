@@ -96,7 +96,7 @@ export default function MyDocuments() {
         </AnimatePresence>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {requiredVaultDocs.map(docType => {
+          {[...new Set([...requiredVaultDocs, ...documents.map(d => d.docType)])].map(docType => {
             const savedDoc = getDocStatus(docType);
             const isUploading = uploadingDoc === docType;
             

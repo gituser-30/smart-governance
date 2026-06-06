@@ -53,7 +53,15 @@ async def process_document_with_ai(document_type: str, extracted_raw_text: str, 
            - idNumber: Extract exact certificate or ID numbers.
            - dob: Extract if present.
            - income: For Income certificates, extract the highest or most recent annual income value.
-           - address: Extract village/city exactly as written.
+           - address: Extract any remaining address line.
+           - gender: Extract gender (Male/Female/Other).
+           - fatherName: Extract father's name if present.
+           - motherName: Extract mother's name if present.
+           - placeOfBirth: Extract place of birth if present.
+           - village: Look for 'गाव', 'मुक्काम', or 'Village' and extract the village name.
+           - taluka: Look for 'तहसील', 'ता.', 'तालुका', or 'Taluka' and extract the taluka name.
+           - district: Look for 'जिल्हा', 'जि.', 'District' and extract the district name.
+           - pincode: Extract 6-digit pincode if present.
         
         Return RAW JSON exclusively. Absolutely no markdown wrappers.
         JSON format:
@@ -66,7 +74,14 @@ async def process_document_with_ai(document_type: str, extracted_raw_text: str, 
                 "dob": string or null,
                 "income": string or null,
                 "address": string or null,
-                "gender": string or null
+                "gender": string or null,
+                "fatherName": string or null,
+                "motherName": string or null,
+                "placeOfBirth": string or null,
+                "village": string or null,
+                "taluka": string or null,
+                "district": string or null,
+                "pincode": string or null
             }}
         }}
         """

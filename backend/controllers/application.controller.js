@@ -338,10 +338,9 @@ exports.updateStatus = async (req, res, next) => {
     const { status, rejectionReason } = req.body;
     
     // Use findByIdAndUpdate to avoid full validation errors on old records (like missing 'area')
-    // We populate 'user' so we have the email for the notification
     const application = await Application.findByIdAndUpdate(
       req.params.id,
-      { status, updatedAt: Date.now() },
+      { status, adminRemark: rejectionReason, updatedAt: Date.now() },
       { new: true, runValidators: true }
     ).populate('user', 'fullName email avatar');
     

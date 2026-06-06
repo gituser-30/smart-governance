@@ -8,7 +8,7 @@ import Navbar from '../components/Navbar';
 
 const documentRequirements = {
   'Income': ['Aadhar Card', 'Income Proof', 'Passport Photo'],
-  'Domicile': ['Aadhar Card', 'Birth Certificate'],
+  'Domicile': ['Aadhar Card', 'PAN Card'],
   'EWS': ['Aadhar Card', 'Income Certificate', 'Passport Photo'],
   'Birth': ['Hospital Summary', 'Parents Aadhar Card']
 };
@@ -121,6 +121,33 @@ export default function ApplyForm() {
 
   const handleFinalSubmit = async (e) => {
     e.preventDefault();
+    
+    // Validations
+    if (formFields.phone && !/^\d{10}$/.test(formFields.phone)) {
+      setErrorMsg("Please enter a valid 10-digit phone number.");
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
+    
+    if (formFields.dob && new Date(formFields.dob) > new Date()) {
+      setErrorMsg("Date of Birth cannot be in the future.");
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
+    
+    if (formFields.idNumber) {
+      if (!/^\d{12}$/.test(formFields.idNumber) && !/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/.test(formFields.idNumber)) {
+        setErrorMsg("Please enter a valid 12-digit Aadhar number or 10-character PAN.");
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        return;
+      }
+      if (extractedData.idNumber && formFields.idNumber !== extractedData.idNumber) {
+        setErrorMsg(`The entered ID number does not match the AI-verified document ID (${extractedData.idNumber}). Please fix the ID or change the uploaded document.`);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        return;
+      }
+    }
+
     setSubmitting(true);
     
     // Map required vault docs to application document format
@@ -282,7 +309,8 @@ export default function ApplyForm() {
                    </div>
                 </div>
 
-                <form onSubmit={handleFinalSubmit} className="space-y-6">
+                <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+                   <form onSubmit={handleFinalSubmit} className="space-y-6 xl:col-span-2">
                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5 bg-navy-800/30 p-6 rounded-xl border border-navy-600/20">
                       
                       <div className="col-span-1 md:col-span-2">
@@ -292,7 +320,10 @@ export default function ApplyForm() {
 
                       <div>
                          <label className="block text-xs font-bold text-navy-300 uppercase mb-1.5">Full Legal Name <span className="text-red-400">*</span></label>
-                         <input required type="text" name="fullName" value={formFields.fullName} onChange={handleFieldChange} className="gov-input" />
+                         <div className="relative">
+                            <input required type="text" name="fullName" value={formFields.fullName} onChange={handleFieldChange} className="gov-input" />
+                            {extractedData.fullName && <span className="absolute right-3 top-3 text-[10px] bg-gov-green/15 text-gov-green px-2 py-0.5 rounded font-bold border border-gov-green/20">Auto</span>}
+                         </div>
                       </div>
                       
                       <div>
@@ -305,26 +336,38 @@ export default function ApplyForm() {
 
                       <div>
                          <label className="block text-xs font-bold text-navy-300 uppercase mb-1.5">Date of Birth</label>
-                         <input type="date" name="dob" value={formFields.dob} onChange={handleFieldChange} className="gov-input" />
+                         <div className="relative">
+                            <input type="date" name="dob" value={formFields.dob} onChange={handleFieldChange} className="gov-input" />
+                            {extractedData.dob && <span className="absolute right-3 top-3 text-[10px] bg-gov-green/15 text-gov-green px-2 py-0.5 rounded font-bold border border-gov-green/20">Auto</span>}
+                         </div>
                       </div>
 
                       {certType === 'Income' || certType === 'EWS' ? (
                         <div>
                            <label className="block text-xs font-bold text-navy-300 uppercase mb-1.5">Annual Income (₹) <span className="text-red-400">*</span></label>
-                           <input required type="number" name="income" value={formFields.income} onChange={handleFieldChange} className="gov-input" />
+                           <div className="relative">
+                              <input required type="number" name="income" value={formFields.income} onChange={handleFieldChange} className="gov-input" />
+                              {extractedData.income && <span className="absolute right-3 top-3 text-[10px] bg-gov-green/15 text-gov-green px-2 py-0.5 rounded font-bold border border-gov-green/20">Auto</span>}
+                           </div>
                         </div>
                       ) : null}
 
                       <div className="col-span-1 md:col-span-2">
                          <label className="block text-xs font-bold text-navy-300 uppercase mb-1.5">Address</label>
-                         <textarea name="address" value={formFields.address} onChange={handleFieldChange} rows="2" className="gov-input resize-none" />
+                         <div className="relative">
+                            <textarea name="address" value={formFields.address} onChange={handleFieldChange} rows="2" className="gov-input resize-none" />
+                            {extractedData.address && <span className="absolute right-3 top-3 text-[10px] bg-gov-green/15 text-gov-green px-2 py-0.5 rounded font-bold border border-gov-green/20">Auto</span>}
+                         </div>
                       </div>
 
                       {(certType === 'Income' || certType === 'EWS') && (
                         <>
                           <div>
                              <label className="block text-xs font-bold text-navy-300 uppercase mb-1.5">Father's Name <span className="text-red-400">*</span></label>
-                             <input required type="text" name="fatherName" value={formFields.fatherName} onChange={handleFieldChange} className="gov-input" placeholder="Mr. Full Name" />
+                             <div className="relative">
+                                <input required type="text" name="fatherName" value={formFields.fatherName} onChange={handleFieldChange} className="gov-input" placeholder="Mr. Full Name" />
+                                {extractedData.fatherName && <span className="absolute right-3 top-3 text-[10px] bg-gov-green/15 text-gov-green px-2 py-0.5 rounded font-bold border border-gov-green/20">Auto</span>}
+                             </div>
                           </div>
                           <div>
                              <label className="block text-xs font-bold text-navy-300 uppercase mb-1.5">Caste/Category <span className="text-red-400">*</span></label>
@@ -332,19 +375,31 @@ export default function ApplyForm() {
                           </div>
                           <div>
                              <label className="block text-xs font-bold text-navy-300 uppercase mb-1.5">Village <span className="text-red-400">*</span></label>
-                             <input required type="text" name="village" value={formFields.village} onChange={handleFieldChange} className="gov-input" />
+                             <div className="relative">
+                                <input required type="text" name="village" value={formFields.village} onChange={handleFieldChange} className="gov-input" />
+                                {extractedData.village && <span className="absolute right-3 top-3 text-[10px] bg-gov-green/15 text-gov-green px-2 py-0.5 rounded font-bold border border-gov-green/20">Auto</span>}
+                             </div>
                           </div>
                           <div>
                              <label className="block text-xs font-bold text-navy-300 uppercase mb-1.5">Taluka <span className="text-red-400">*</span></label>
-                             <input required type="text" name="taluka" value={formFields.taluka} onChange={handleFieldChange} className="gov-input" />
+                             <div className="relative">
+                                <input required type="text" name="taluka" value={formFields.taluka} onChange={handleFieldChange} className="gov-input" />
+                                {extractedData.taluka && <span className="absolute right-3 top-3 text-[10px] bg-gov-green/15 text-gov-green px-2 py-0.5 rounded font-bold border border-gov-green/20">Auto</span>}
+                             </div>
                           </div>
                           <div>
                              <label className="block text-xs font-bold text-navy-300 uppercase mb-1.5">District <span className="text-red-400">*</span></label>
-                             <input required type="text" name="district" value={formFields.district} onChange={handleFieldChange} className="gov-input" />
+                             <div className="relative">
+                                <input required type="text" name="district" value={formFields.district} onChange={handleFieldChange} className="gov-input" />
+                                {extractedData.district && <span className="absolute right-3 top-3 text-[10px] bg-gov-green/15 text-gov-green px-2 py-0.5 rounded font-bold border border-gov-green/20">Auto</span>}
+                             </div>
                           </div>
                           <div>
                              <label className="block text-xs font-bold text-navy-300 uppercase mb-1.5">Pincode <span className="text-red-400">*</span></label>
-                             <input required type="text" name="pincode" value={formFields.pincode} onChange={handleFieldChange} className="gov-input" />
+                             <div className="relative">
+                                <input required type="text" name="pincode" value={formFields.pincode} onChange={handleFieldChange} className="gov-input" />
+                                {extractedData.pincode && <span className="absolute right-3 top-3 text-[10px] bg-gov-green/15 text-gov-green px-2 py-0.5 rounded font-bold border border-gov-green/20">Auto</span>}
+                             </div>
                           </div>
                           <div>
                              <label className="block text-xs font-bold text-navy-300 uppercase mb-1.5">Financial Year <span className="text-red-400">*</span></label>
@@ -361,24 +416,36 @@ export default function ApplyForm() {
                         <>
                           <div>
                              <label className="block text-xs font-bold text-navy-300 uppercase mb-1.5">Father's Name <span className="text-red-400">*</span></label>
-                             <input required type="text" name="fatherName" value={formFields.fatherName} onChange={handleFieldChange} className="gov-input" />
+                             <div className="relative">
+                                <input required type="text" name="fatherName" value={formFields.fatherName} onChange={handleFieldChange} className="gov-input" />
+                                {extractedData.fatherName && <span className="absolute right-3 top-3 text-[10px] bg-gov-green/15 text-gov-green px-2 py-0.5 rounded font-bold border border-gov-green/20">Auto</span>}
+                             </div>
                           </div>
                           <div>
                              <label className="block text-xs font-bold text-navy-300 uppercase mb-1.5">Mother's Name <span className="text-red-400">*</span></label>
-                             <input required type="text" name="motherName" value={formFields.motherName} onChange={handleFieldChange} className="gov-input" />
+                             <div className="relative">
+                                <input required type="text" name="motherName" value={formFields.motherName} onChange={handleFieldChange} className="gov-input" />
+                                {extractedData.motherName && <span className="absolute right-3 top-3 text-[10px] bg-gov-green/15 text-gov-green px-2 py-0.5 rounded font-bold border border-gov-green/20">Auto</span>}
+                             </div>
                           </div>
                           <div>
                              <label className="block text-xs font-bold text-navy-300 uppercase mb-1.5">Gender <span className="text-red-400">*</span></label>
-                             <select required name="gender" value={formFields.gender} onChange={handleFieldChange} className="gov-input">
-                                <option value="">Select Gender</option>
-                                <option value="Male">Male</option>
-                                <option value="Female">Female</option>
-                                <option value="Other">Other</option>
-                             </select>
+                             <div className="relative">
+                                <select required name="gender" value={formFields.gender} onChange={handleFieldChange} className="gov-input">
+                                   <option value="">Select Gender</option>
+                                   <option value="Male">Male</option>
+                                   <option value="Female">Female</option>
+                                   <option value="Other">Other</option>
+                                </select>
+                                {extractedData.gender && <span className="absolute right-8 top-3 text-[10px] bg-gov-green/15 text-gov-green px-2 py-0.5 rounded font-bold border border-gov-green/20">Auto</span>}
+                             </div>
                           </div>
                           <div>
                              <label className="block text-xs font-bold text-navy-300 uppercase mb-1.5">Place of Birth <span className="text-red-400">*</span></label>
-                             <input required type="text" name="placeOfBirth" value={formFields.placeOfBirth} onChange={handleFieldChange} className="gov-input" placeholder="Hospital / Address" />
+                             <div className="relative">
+                                <input required type="text" name="placeOfBirth" value={formFields.placeOfBirth} onChange={handleFieldChange} className="gov-input" placeholder="Hospital / Address" />
+                                {extractedData.placeOfBirth && <span className="absolute right-3 top-3 text-[10px] bg-gov-green/15 text-gov-green px-2 py-0.5 rounded font-bold border border-gov-green/20">Auto</span>}
+                             </div>
                           </div>
                         </>
                       )}
@@ -387,19 +454,31 @@ export default function ApplyForm() {
                         <>
                           <div>
                              <label className="block text-xs font-bold text-navy-300 uppercase mb-1.5">Father's Name <span className="text-red-400">*</span></label>
-                             <input required type="text" name="fatherName" value={formFields.fatherName} onChange={handleFieldChange} className="gov-input" />
+                             <div className="relative">
+                                <input required type="text" name="fatherName" value={formFields.fatherName} onChange={handleFieldChange} className="gov-input" />
+                                {extractedData.fatherName && <span className="absolute right-3 top-3 text-[10px] bg-gov-green/15 text-gov-green px-2 py-0.5 rounded font-bold border border-gov-green/20">Auto</span>}
+                             </div>
                           </div>
                           <div>
                              <label className="block text-xs font-bold text-navy-300 uppercase mb-1.5">Place of Birth <span className="text-red-400">*</span></label>
-                             <input required type="text" name="placeOfBirth" value={formFields.placeOfBirth} onChange={handleFieldChange} className="gov-input" />
+                             <div className="relative">
+                                <input required type="text" name="placeOfBirth" value={formFields.placeOfBirth} onChange={handleFieldChange} className="gov-input" />
+                                {extractedData.placeOfBirth && <span className="absolute right-3 top-3 text-[10px] bg-gov-green/15 text-gov-green px-2 py-0.5 rounded font-bold border border-gov-green/20">Auto</span>}
+                             </div>
                           </div>
                           <div>
                              <label className="block text-xs font-bold text-navy-300 uppercase mb-1.5">Village <span className="text-red-400">*</span></label>
-                             <input required type="text" name="village" value={formFields.village} onChange={handleFieldChange} className="gov-input" />
+                             <div className="relative">
+                                <input required type="text" name="village" value={formFields.village} onChange={handleFieldChange} className="gov-input" />
+                                {extractedData.village && <span className="absolute right-3 top-3 text-[10px] bg-gov-green/15 text-gov-green px-2 py-0.5 rounded font-bold border border-gov-green/20">Auto</span>}
+                             </div>
                           </div>
                           <div>
                              <label className="block text-xs font-bold text-navy-300 uppercase mb-1.5">District <span className="text-red-400">*</span></label>
-                             <input required type="text" name="district" value={formFields.district} onChange={handleFieldChange} className="gov-input" />
+                             <div className="relative">
+                                <input required type="text" name="district" value={formFields.district} onChange={handleFieldChange} className="gov-input" />
+                                {extractedData.district && <span className="absolute right-3 top-3 text-[10px] bg-gov-green/15 text-gov-green px-2 py-0.5 rounded font-bold border border-gov-green/20">Auto</span>}
+                             </div>
                           </div>
                           <div>
                              <label className="block text-xs font-bold text-navy-300 uppercase mb-1.5">Residency Period (Years) <span className="text-red-400">*</span></label>
@@ -447,6 +526,43 @@ export default function ApplyForm() {
                       {submitting ? (<span className="flex items-center gap-2"><Loader2 className="w-5 h-5 animate-spin" /> Forwarding to Admin...</span>) : 'Final Submit to Officer'}
                    </motion.button>
                 </form>
+
+                {/* Vault Documents Preview Sidebar */}
+                <div className="hidden xl:block space-y-4">
+                   <h4 className="text-sm font-bold text-white uppercase tracking-wider border-l-3 border-gov-green pl-3 mb-1">Vault Documents</h4>
+                   <p className="text-xs text-navy-400 mb-4 font-medium">Reference these documents while filling the form.</p>
+                   <div className="space-y-3 h-auto max-h-[700px] overflow-y-auto pr-2 custom-scrollbar">
+                      {vaultDocs.filter(d => requiredDocs.includes(d.docType)).map(doc => (
+                        <div key={doc.docType} className="bg-navy-800/40 border border-navy-600/30 rounded-xl overflow-hidden">
+                           <div className="bg-navy-800 px-3 py-2 border-b border-navy-600/30 flex justify-between items-center">
+                              <span className="text-xs font-bold text-white">{doc.docType}</span>
+                              <div className="flex gap-3 items-center">
+                                {uploadingDoc === doc.docType ? (
+                                  <span className="text-[10px] text-saffron-500 animate-pulse font-bold">Uploading...</span>
+                                ) : (
+                                  <label className="cursor-pointer text-[10px] text-navy-300 hover:text-white transition-colors">
+                                    Change Doc
+                                    <input type="file" className="sr-only" onChange={(e) => handleUploadMissing(doc.docType, e.target.files[0])} accept=".jpg,.jpeg,.png,.pdf" />
+                                  </label>
+                                )}
+                                <span className="text-[10px] text-gov-green px-2 py-0.5 rounded-full bg-gov-green/10 flex items-center gap-1"><CheckCircle className="w-3 h-3" /> Verified</span>
+                              </div>
+                           </div>
+                           <div className="p-2 bg-navy-900/50">
+                              {doc.url.endsWith('.pdf') ? (
+                                 <div className="flex items-center justify-center p-4">
+                                    <FileText className="w-8 h-8 text-navy-400" />
+                                    <span className="text-xs text-navy-400 ml-2 font-medium">PDF Document</span>
+                                 </div>
+                              ) : (
+                                 <img src={doc.url} alt={doc.docType} className="w-full rounded border border-navy-600/20 object-contain max-h-48" />
+                              )}
+                           </div>
+                        </div>
+                      ))}
+                   </div>
+                </div>
+             </div>
              </motion.div>
           )}
 

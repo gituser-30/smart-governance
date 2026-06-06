@@ -319,6 +319,7 @@ export default function Dashboard() {
                 ) : (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                     {filtered.map((app, idx) => (
+                      <React.Fragment key={app._id}>
                       <motion.div
                         initial={{ opacity: 0, x: -10 }}
                         animate={{ opacity: 1, x: 0 }}
@@ -344,11 +345,21 @@ export default function Dashboard() {
                             <button onClick={() => navigate(`/certificate/${app.trackingId}`)} style={{ background: 'none', border: 'none', color: '#22C55E', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, marginLeft: 'auto', fontWeight: 800, fontSize: 12 }}>
                               {t('dash_view')} <ArrowRight size={14} />
                             </button>
+                          ) : app.status === 'Rejected' ? (
+                            <button onClick={() => { navigate(`/apply?type=${app.certificateType}`); setShowApplyModal(false); }} style={{ background: 'none', border: 'none', color: '#EF4444', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, marginLeft: 'auto', fontWeight: 800, fontSize: 12 }}>
+                              Edit & Re-apply <ArrowRight size={14} />
+                            </button>
                           ) : (
                             <div style={{ fontSize: 11, color: '#4B5B7A', fontWeight: 700 }}>{t('dash_inReview')}</div>
                           )}
                         </div>
                       </motion.div>
+                      {app.status === 'Rejected' && app.adminRemark && (
+                         <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="mt-1 ml-4 mr-4 mb-2 p-3 bg-red-500/10 border border-red-500/20 rounded-xl">
+                            <p className="text-xs text-red-400 font-medium"><strong className="font-bold">Rejection Reason:</strong> {app.adminRemark}</p>
+                         </motion.div>
+                      )}
+                      </React.Fragment>
                     ))}
                   </div>
                 )}

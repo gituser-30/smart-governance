@@ -25,6 +25,7 @@ const ApplicationSchema = new mongoose.Schema({
   trackingId: { type: String, unique: true },
   formFields: { type: mongoose.Schema.Types.Mixed, default: {} },
   paymentStatus: { type: String, enum: ['Pending', 'Completed'], default: 'Completed' }, // Assuming free or pre-paid online
+  adminRemark: { type: String },
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now }
 });
