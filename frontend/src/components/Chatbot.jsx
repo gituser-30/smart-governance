@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { MessageSquare, X, Send, Bot } from 'lucide-react';
+import { MessageSquare, X, Send, Bot, Loader2 } from 'lucide-react';
+import axios from 'axios';
 
 export default function Chatbot() {
   const [isOpen, setIsOpen] = useState(false);
@@ -8,39 +9,33 @@ export default function Chatbot() {
     { id: 1, text: "Hello! I am your Smart Governance assistant. How can I help you today?", isBot: true }
   ]);
   const [input, setInput] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleSend = () => {
-    if (!input.trim()) return;
+  const handleSend = async () => {
+    if (!input.trim() || isLoading) return;
     
     const userMsg = { id: Date.now(), text: input, isBot: false };
-    setMessages(prev => [...prev, userMsg]);
+    const newMessages = [...messages, userMsg];
+    setMessages(newMessages);
     setInput("");
+    setIsLoading(true);
 
-    // Simulate bot response
-    setTimeout(() => {
-      let reply = "I am a demo assistant. For specific issues, please file a grievance or contact support.";
+    try {
+      const res = await axios.post('http://localhost:5000/api/chat', {
+        messages: newMessages
+      });
       
-      const lower = userMsg.text.toLowerCase();
-      
-      // Check grievance/complaints first
-      if (lower.includes("griev") || lower.includes("grev") || lower.includes("complain") || lower.includes("issue") || lower.includes("problem")) {
-        reply = "To lodge a complaint or grievance, navigate to the 'My Grievances' panel or 'Help & Support' in your sidebar and click the file grievance button.";
-      } 
-      // Then check tracking
-      else if (lower.includes("track") || lower.includes("status")) {
-        reply = "You can track your application status in the 'My Certificates' panel from your sidebar.";
-      } 
-      // Then check certificate/apply
-      else if (lower.includes("certificate") || lower.includes("apply") || lower.includes("document")) {
-        reply = "To apply for certificates like Domicile or Income, go to the 'Dashboard' from your sidebar and click on the 'Apply' button on the certificate card.";
-      } 
-      // Greetings
-      else if (lower.includes("hello") || lower.includes("hi") || lower.includes("hey")) {
-        reply = "Hi there! How can I assist you with the Smart Governance platform today?";
+      if (res.data.success) {
+        setMessages(prev => [...prev, { id: Date.now(), text: res.data.reply, isBot: true }]);
+      } else {
+        setMessages(prev => [...prev, { id: Date.now(), text: "Sorry, I am having trouble connecting to the server.", isBot: true }]);
       }
-
-      setMessages(prev => [...prev, { id: Date.now(), text: reply, isBot: true }]);
-    }, 800);
+    } catch (error) {
+      console.error("Chatbot API error:", error);
+      setMessages(prev => [...prev, { id: Date.now(), text: "Sorry, an error occurred. Please try again later.", isBot: true }]);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -109,11 +104,18 @@ export default function Chatbot() {
                 value={input} 
                 onChange={e => setInput(e.target.value)}
                 onKeyDown={e => e.key === 'Enter' && handleSend()}
-                placeholder="Ask me anything..." 
-                style={{ flex: 1, background: '#060C18', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, padding: '10px 14px', color: '#fff', outline: 'none', fontSize: 13 }}
+                placeholder={isLoading ? "Thinking..." : "Ask me anything..."} 
+                disabled={isLoading}
+                style={{ flex: 1, background: '#060C18', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, padding: '10px 14px', color: '#fff', outline: 'none', fontSize: 13, opacity: isLoading ? 0.7 : 1 }}
               />
-              <button onClick={handleSend} style={{ background: '#F97316', border: 'none', borderRadius: 12, width: 42, height: 42, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', cursor: 'pointer', transition: 'background 0.2s' }} onMouseOver={e => e.currentTarget.style.background='#E07800'} onMouseOut={e => e.currentTarget.style.background='#F97316'}>
-                <Send size={18} />
+              <button 
+                onClick={handleSend} 
+                disabled={isLoading}
+                style={{ background: '#F97316', border: 'none', borderRadius: 12, width: 42, height: 42, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', cursor: isLoading ? 'not-allowed' : 'pointer', transition: 'background 0.2s', opacity: isLoading ? 0.7 : 1 }} 
+                onMouseOver={e => !isLoading && (e.currentTarget.style.background='#E07800')} 
+                onMouseOut={e => !isLoading && (e.currentTarget.style.background='#F97316')}
+              >
+                {isLoading ? <Loader2 size={18} className="animate-spin" /> : <Send size={18} />}
               </button>
             </div>
           </motion.div>

@@ -23,12 +23,15 @@ const applicationRoutes = require('./routes/application.routes');
 const grievanceRoutes = require('./routes/grievance.routes');
 const auditRoutes = require('./routes/audit.routes');
 const documentRoutes = require('./routes/document.routes');
+const chatRoutes = require('./routes/chat.routes');
+
 
 app.use('/api/auth', authRoutes);
 app.use('/api/applications', applicationRoutes);
 app.use('/api/grievances', grievanceRoutes);
 app.use('/api/audit', auditRoutes);
 app.use('/api/documents', documentRoutes);
+app.use('/api/chat', chatRoutes);
 
 // Health Check
 app.get('/health', (req, res) => {
